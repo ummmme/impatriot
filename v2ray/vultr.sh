@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
-# VPS一键安装V2ray脚本(websocket + nginx tls)(Ubuntu18.04)
-#0. 前言：必须先在dns服务商将 二级域名指向新开的VPS，再执行本脚本
+# VPS一键安装V2ray脚本(websocket + nginx + tls)(Ubuntu18.04)
+#0. 前言：必须先在dns服务商将 二级域名指向新开的服务器，再在服务器上执行本脚本
 #1. 更新系统
 #2. 安装Nginx
 #3. 申请证书：acme.sh
 #4. 安装V2ray, 配置生成：https://www.veekxt.com/utils/v2ray_gen
 #5. 一些自定义配置
-#Date: 2019-06-04
+#Date: 2019-06-10
 
-#配置 主机名
+#配置主机名
 HOST_NAME="Toronto"
 
-# 使用二级域名来转发v2ray流量，不要用一级域名
+#配置二级域名来转发v2ray流量，不要用一级域名
 PROXY_DOMAIN="toronto.abc.com"
+
+#请勿修改以下配置-------------------------------------------
 PROXY_DOMAIN_CERT_FILE="/etc/nginx/ssl/${PROXY_DOMAIN}.fullchain.cer"
 PROXY_DOMAIN_KEY_FILE="/etc/nginx/ssl/${PROXY_DOMAIN}.key"
 
