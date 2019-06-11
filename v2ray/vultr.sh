@@ -5,7 +5,7 @@
 #2. 安装Nginx
 #3. 申请证书：acme.sh
 #4. 安装V2ray, 配置生成：https://www.veekxt.com/utils/v2ray_gen
-#5. 一些自定义配置
+#5. 安装完成后，将服务器上的/etc/v2ray/config.json.client 文件复制到本地，并重命名为/etc/v2ray/config.json后，重启本地v2ray即可
 #Date: 2019-06-10
 
 #配置主机名
