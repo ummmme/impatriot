@@ -12,3 +12,5 @@
 ## 附言
 仅供测试使用
 
+## License
+MIT License
