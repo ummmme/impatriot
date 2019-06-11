@@ -107,15 +107,6 @@ http {
 
     keepalive_timeout  60;
 
-    #FastCGI相关参数
-    fastcgi_connect_timeout 300;
-    fastcgi_send_timeout 300;
-    fastcgi_read_timeout 300;
-    fastcgi_buffer_size 64k;
-    fastcgi_buffers 4 64k;
-    fastcgi_busy_buffers_size 128k;
-    fastcgi_temp_file_write_size 128k;
-
     #gzip模块设置
     gzip               on;
     gzip_vary          on;
