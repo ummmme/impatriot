@@ -12,7 +12,7 @@
 HOST_NAME="Toronto"
 
 # 使用二级域名来转发v2ray流量，不要用一级域名
-PROXY_DOMAIN="toronto.immm.site"
+PROXY_DOMAIN="toronto.abc.com"
 PROXY_DOMAIN_CERT_FILE="/etc/nginx/ssl/${PROXY_DOMAIN}.fullchain.cer"
 PROXY_DOMAIN_KEY_FILE="/etc/nginx/ssl/${PROXY_DOMAIN}.key"
 
@@ -254,15 +254,6 @@ http {
 
     keepalive_timeout  60;
 
-    #FastCGI相关参数
-    fastcgi_connect_timeout 300;
-    fastcgi_send_timeout 300;
-    fastcgi_read_timeout 300;
-    fastcgi_buffer_size 64k;
-    fastcgi_buffers 4 64k;
-    fastcgi_busy_buffers_size 128k;
-    fastcgi_temp_file_write_size 128k;
-
     #gzip模块设置
     gzip               on;
     gzip_vary          on;
@@ -399,5 +390,4 @@ EOF
 service nginx restart
 systemctl restart v2ray
 
-
-#7. 打开bbr
+echo "install finished";
