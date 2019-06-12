@@ -233,6 +233,7 @@ worker_rlimit_nofile 65535;
 events {
     use epoll;
     worker_connections  8192;
+    multi_accept on;
 }
 
 http {
@@ -284,6 +285,8 @@ http {
         ssl_certificate_key   ${PROXY_DOMAIN_KEY_FILE};
         ssl_protocols         TLSv1 TLSv1.1 TLSv1.2;
         ssl_ciphers           HIGH:!aNULL:!MD5;
+        ssl_session_cache shared:SSL:10m;
+        ssl_session_timeout 60m;
 
         root /export/www/${PROXY_DOMAIN};
         index index.html index.htm index.nginx-debian.html;
@@ -391,5 +394,66 @@ EOF
 #6.4 重启nginx and v2ray
 service nginx restart
 systemctl restart v2ray
+
+#7. 优化
+cat > /etc/sysctl.d/default.conf << EOF
+# 最大打开文件
+fs.file-max = 51200
+# 最大读取缓冲区
+net.core.rmem_max = 67108864
+# 最大写入缓冲区
+net.core.wmem_max = 67108864
+# 默认读取缓冲区
+net.core.rmem_default = 65536
+# 默认写入缓冲区
+net.core.wmem_default = 65536
+# 最大处理器输入队列
+net.core.netdev_max_backlog = 4096
+# 最大积压量
+net.core.somaxconn = 4096
+
+# 抵御 SYN 洪水攻击
+net.ipv4.tcp_syncookies = 1
+# 安全时重用 timewait 套接字
+net.ipv4.tcp_tw_reuse = 1
+# 关闭快速 timewait 套接字回收
+net.ipv4.tcp_tw_recycle = 0
+# FIN 超时时间
+net.ipv4.tcp_fin_timeout = 30
+# keepalive 间隔时间
+net.ipv4.tcp_keepalive_time = 1200
+# 出站端口范围
+net.ipv4.ip_local_port_range = 10000 65000
+# 最大 SYN 积压
+net.ipv4.tcp_max_syn_backlog = 4096
+# 由系统同时持有的最大 timewait 套接字
+net.ipv4.tcp_max_tw_buckets = 5000
+# 开启 TCP Fast Open
+net.ipv4.tcp_fastopen = 3
+# TCP 接收缓冲区
+net.ipv4.tcp_rmem = 4096 87380 67108864
+# TCP 写入缓冲区
+net.ipv4.tcp_wmem = 4096 65536 67108864
+# 开启 MTU 探测
+net.ipv4.tcp_mtu_probing = 1
+
+# 开启忽略 ICMP 请求
+#net.ipv4.icmp_echo_ignore_all = 1
+
+# 适用于高延迟网络
+#net.ipv4.tcp_congestion_control = hybla
+
+# 对于低延迟网络，用 cubic 代替
+#net.ipv4.tcp_congestion_control = cubic
+
+# BBR
+net.core.default_qdisc = fq
+net.ipv4.tcp_congestion_control = bbr
+EOF
+sysctl --system
+
+#7.2 增加文件描述符限制, <所有用户> <软限制和硬限制> <文件描述符> <整型数值>
+mkdir /etc/security/limits.d
+echo "* - nofile 51200" > /etc/security/limits.d/default.conf;
 
 echo "install finished";
