@@ -72,7 +72,7 @@ apt update
 apt -y upgrade
 
 #1.0  机器名，时区
-echo ${HOST_NAME} > /etc/hostname && hostname ${HOST_NAME}
+#echo ${HOST_NAME} > /etc/hostname && hostname ${HOST_NAME}
 timedatectl set-timezone Asia/Shanghai
 
 ## 1.1 配置命令alias:
