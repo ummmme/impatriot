@@ -8,13 +8,52 @@
 #5. 安装完成后，将服务器上的/etc/v2ray/config.json.client 文件复制到本地，并重命名为/etc/v2ray/config.json后，重启本地v2ray即可
 #Date: 2019-06-10
 
-#配置主机名
-HOST_NAME="Toronto"
 
-#配置二级域名来转发v2ray流量，不要用一级域名
-PROXY_DOMAIN="toronto.abc.com"
+#说明
+showUsage() {
+cat 1>&2 <<EOF
+one key to install v2ray, nginx and apply tls cert script. usage:
+available args:
+[-d|--domain]: your vps secondary domain name, pointing to current vps
+[e.g: bash ws_nginx_tls_install.sh -d v2ray.your-domain-name.com]
+EOF
+}
+
+printr() {
+    echo; echo "## $1"; echo;
+}
+
+#获取参数
+PROXY_DOMAIN="";
+GET_ARGS=`getopt -o d: -al domain: -- "$@"`
+eval set -- "$GET_ARGS"
+
+#开始处理
+while [ -n "$1" ]
+do
+    case "$1" in
+        -d|--domain) PROXY_DOMAIN=$2; shift 2;;
+        --) break ;;
+        *) showUsage; break ;;
+    esac
+done
+
+#判断参数有效性:
+if [[ -z "${PROXY_DOMAIN}" ]]; then
+    showUsage;
+    exit 1;
+fi
+
+CURRENT_IP=$(ifconfig -a | grep inet | grep -v "127.0.0.1\|inet6\|0.0.0.0" | awk '{print $2}' | tr -d "addr:");
+DOMAIN_IP=$(nslookup ${PROXY_DOMAIN} 8.8.8.8 | grep -v "8.8.8.8\|127.0.0.53" | grep "Address:"  | awk '{print $2}');
+
+if [[ "${CURRENT_IP}" != "${DOMAIN_IP}" ]]; then
+    printr "[ERROR]:  the domain: ${PROXY_DOMAIN} didn't point to current server.";
+    exit 1;
+fi
 
 #请勿修改以下配置-------------------------------------------
+#配置二级域名来转发v2ray流量，不要用一级域名
 PROXY_DOMAIN_CERT_FILE="/etc/nginx/ssl/${PROXY_DOMAIN}.fullchain.cer"
 PROXY_DOMAIN_KEY_FILE="/etc/nginx/ssl/${PROXY_DOMAIN}.key"
 
@@ -245,11 +284,7 @@ http {
     large_client_header_buffers 4 64k; #设定请求缓
     client_max_body_size 8m; #设定请求缓存大小
 
-    log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
-                      '\$status \$body_bytes_sent "\$http_referer" '
-                      '"\$http_user_agent" "\$http_x_forwarded_for"';
-
-    access_log  /var/log/nginx/access.log  main;
+    access_log  off;
 
     sendfile        on;
     tcp_nopush      on;
@@ -456,4 +491,4 @@ sysctl --system
 mkdir /etc/security/limits.d
 echo "* - nofile 51200" > /etc/security/limits.d/default.conf;
 
-echo "install finished";
+echo "conguatulations. install finished, please copy the config file to your local machine.";
