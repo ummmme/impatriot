@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Vultr 服务器测速脚本
+# DigitalOcean 服务器测速脚本
 # version: 20190613
 # 节点地址：http://speedtest-nyc1.digitalocean.com/
 
