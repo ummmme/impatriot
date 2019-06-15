@@ -1,21 +1,28 @@
 #!/usr/bin/env bash
 # VPS一键安装V2ray脚本(websocket + nginx + tls)(Ubuntu18.04)
-#0. 前言：必须先在dns服务商将 二级域名指向新开的服务器，再在服务器上执行本脚本
+#0. 前言：必须先在dns服务商将二级域名指向新开的服务器，再在服务器上执行本脚本
 #1. 更新系统
 #2. 安装Nginx
 #3. 申请证书：acme.sh
 #4. 安装V2ray, 配置生成：https://www.veekxt.com/utils/v2ray_gen
-#5. 安装完成后，将服务器上的/etc/v2ray/config.json.client 文件复制到本地，并重命名为/etc/v2ray/config.json后，重启本地v2ray即可
+#5. 安装完成后，将服务器上的/etc/v2ray/config.json.client 文件复制到本地的/etc/v2ray 文件夹下，并重命名为config.json后，重启本地v2ray即可
+#6. PS：实测使用websocket+nginx+tls模拟 正常访问网站已经足够绕过GFW识别，没有持续大流量访问的情况下，没有必要用Cloudfare的CDN
 #Date: 2019-06-10
 
 
 #说明
 showUsage() {
 cat 1>&2 <<EOF
+*-----------------------------------------------------------------------
 one key to install v2ray, nginx and apply tls cert script. usage:
 available args:
 [-d|--domain]: your vps secondary domain name, pointing to current vps
 [e.g: bash ws_nginx_tls_install.sh -d v2ray.your-domain-name.com]
+*-----------------------------------------------------------------------
+v2ray 一键安装脚本，自动安装v2ray, nginx, 自动申请证书，自动更新证书，自动生成websocket+nginx+tls模式的服务端和客户端配置
+使用方式：bash ws_nginx_tls_install.sh -d 你的域名
+注意： 使用本脚本前必须先将域名指向这台服务器
+*-----------------------------------------------------------------------
 EOF
 }
 
