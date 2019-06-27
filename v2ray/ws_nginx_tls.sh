@@ -9,7 +9,7 @@
 #6. PS：实测使用websocket+nginx+tls模拟 正常访问网站已经足够绕过GFW识别，没有持续大流量访问的情况下，没有必要用Cloudfare的CDN
 #Date: 2019-06-16
 #2019-06-20: 增加一个404页面作为二级域名的主页
-#2019-06-27: 随机生成websocket的链接，不再固定
+#2019-06-27: 随机生成websocket的链接，随机生成字符串作为v2ray的链接，不再固定为ws
 
 
 #说明
@@ -18,8 +18,7 @@ cat 1>&2 <<EOF
 *-----------------------------------------------------------------------
 one key to install v2ray, nginx and apply tls cert script. usage:
 available args:
-[-d|--domain]: your vps secondary domain name, pointing to current vps
-[e.g: bash ws_nginx_tls.sh -d v2ray.your-domain-name.com]
+[-d|--domain]: your vps domain name, pointing to current vps
 *-----------------------------------------------------------------------
 v2ray 一键安装脚本，自动安装v2ray, nginx, 自动申请证书，自动更新证书，自动生成websocket+nginx+tls模式的服务端和客户端配置
 使用方式：分别执行以下两行命令
@@ -144,6 +143,7 @@ echo "hello" > /export/www/${PROXY_DOMAIN}/index.html
 else
 cp ../404/404.html /export/www/${PROXY_DOMAIN}/index.html
 fi
+mkdir -p /var/log/nginx
 
 mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
 cat >  /etc/nginx/nginx.conf << EOF
@@ -313,10 +313,6 @@ http {
     default_type  application/octet-stream;
 
     charset utf-8;
-    client_header_buffer_size 32k; #上传文件大小限制
-    large_client_header_buffers 4 64k; #设定请求缓
-    client_max_body_size 8m; #设定请求缓存大小
-
     access_log  off;
 
     sendfile        on;
@@ -342,8 +338,7 @@ http {
     server {
         listen  80;
         server_name ${PROXY_DOMAIN};
-        root    /export/www/${PROXY_DOMAIN};
-        index   index.html index.htm index.php;
+        rewrite ^(.*)$  https://\$host\$1 permanent;
     }
     server {
         listen 443 ssl;
@@ -351,8 +346,9 @@ http {
         ssl on;
         ssl_certificate       ${PROXY_DOMAIN_CERT_FILE};
         ssl_certificate_key   ${PROXY_DOMAIN_KEY_FILE};
-        ssl_protocols         TLSv1 TLSv1.1 TLSv1.2;
-        ssl_ciphers           HIGH:!aNULL:!MD5;
+        ssl_protocols         TLSv1.1 TLSv1.2;
+        ssl_ciphers           EECDH+CHACHA20:EECDH+AES128:RSA+AES128:EECDH+AES256:RSA+AES256:EECDH+3DES:RSA+3DES:!MD5;
+        ssl_prefer_server_ciphers on; #优化SSL加密
         ssl_session_cache shared:SSL:10m;
         ssl_session_timeout 60m;
 
@@ -520,9 +516,7 @@ EOF
 sysctl --system
 
 #7.2 增加文件描述符限制, <所有用户> <软限制和硬限制> <文件描述符> <整型数值>
-if [ ! -d  /etc/security/limits.d ]; then
-    mkdir /etc/security/limits.d
-fi
+mkdir -p /etc/security/limits.d
 echo "* - nofile 51200" > /etc/security/limits.d/default.conf;
 
 echo "conguatulations. install finished, please copy the config file to your local machine.";

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# VPS一键安装V2ray脚本(http2 + nginx + tls)(Ubuntu18.04)
+# 一键安装V2ray脚本(nginx暂不支持转发http2请求，请不要使用本工具来安装)
 #0. 前言：必须先在dns服务商将二级域名指向新开的服务器，再在服务器上执行本脚本
 #1. 更新系统
 #2. 安装Nginx
@@ -348,7 +348,7 @@ http {
     server {
         listen  80;
         server_name ${PROXY_DOMAIN};
-        rewrite ^(.*)$  https://$host$1 permanent;
+        rewrite ^(.*)$  https://\$host\$1 permanent;
     }
 
     server {
@@ -373,6 +373,7 @@ http {
         location /${V2RAY_PATH} {
             proxy_redirect off;
             proxy_pass http://127.0.0.1:44222;
+            proxy_http_version 2.0;
             proxy_set_header Upgrade \$http_upgrade;
             proxy_set_header Connection "upgrade";
             proxy_set_header Host \$http_host;
