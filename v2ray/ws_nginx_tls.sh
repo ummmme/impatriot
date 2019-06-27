@@ -7,7 +7,9 @@
 #4. 安装V2ray, 配置生成：https://www.veekxt.com/utils/v2ray_gen
 #5. 安装完成后，将服务器上的/etc/v2ray/config.json.client 文件复制到本地的/etc/v2ray 文件夹下，并重命名为config.json后，重启本地v2ray即可
 #6. PS：实测使用websocket+nginx+tls模拟 正常访问网站已经足够绕过GFW识别，没有持续大流量访问的情况下，没有必要用Cloudfare的CDN
-#Date: 2019-06-10
+#Date: 2019-06-16
+#2019-06-20: 增加一个404页面作为二级域名的主页
+#2019-06-27: 随机生成websocket的链接，不再固定
 
 
 #说明
@@ -17,10 +19,12 @@ cat 1>&2 <<EOF
 one key to install v2ray, nginx and apply tls cert script. usage:
 available args:
 [-d|--domain]: your vps secondary domain name, pointing to current vps
-[e.g: bash ws_nginx_tls_install.sh -d v2ray.your-domain-name.com]
+[e.g: bash ws_nginx_tls.sh -d v2ray.your-domain-name.com]
 *-----------------------------------------------------------------------
 v2ray 一键安装脚本，自动安装v2ray, nginx, 自动申请证书，自动更新证书，自动生成websocket+nginx+tls模式的服务端和客户端配置
-使用方式：bash ws_nginx_tls_install.sh -d 你的域名
+使用方式：分别执行以下两行命令
+[1] cd /usr/local && git clone https://github.com/abcfyk/impatriot.git && cd impatriot/v2ray
+[2] bash ws_nginx_tls.sh -d 你的域名
 注意： 使用本脚本前必须先将域名指向这台服务器
 *-----------------------------------------------------------------------
 EOF
@@ -29,6 +33,21 @@ EOF
 printr() {
     echo; echo "## $1"; echo;
 }
+
+# 生成随机数字
+function rand(){
+    min=$1
+    max=$(($2-$min+1))
+    num=$(cat /proc/sys/kernel/random/uuid | cksum | awk -F ' ' '{print $1}')
+    echo $(($num%$max+$min))
+}
+
+#生成随机长度的字符串,默认为5到10位
+function randStr() {
+    len=`rand 5 10`;
+    echo $(date +%s%N | md5sum | head -c ${len});
+}
+
 
 #获取参数
 PROXY_DOMAIN="";
@@ -66,6 +85,9 @@ PROXY_DOMAIN_KEY_FILE="/etc/nginx/ssl/${PROXY_DOMAIN}.key"
 
 #UUID
 UUID=`cat /proc/sys/kernel/random/uuid`;
+
+#使用随机字符串作为v2ray流量入口
+V2RAY_PATH=`randStr`;
 
 #0. 验证：
 #0.1 系统
@@ -115,9 +137,13 @@ sysctl net.ipv4.tcp_available_congestion_control
 #4.1 安装
 apt install -y nginx
 
-#4.2 配置nginx.conf
+#4.2 配置nginx.conf, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
+if [ ! -f "../404/404.html" ]; then
 echo "hello" > /export/www/${PROXY_DOMAIN}/index.html
+else
+cp ../404/404.html /export/www/${PROXY_DOMAIN}/index.html
+fi
 
 mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
 cat >  /etc/nginx/nginx.conf << EOF
@@ -218,7 +244,7 @@ cat > /etc/v2ray/config.json << EOF
       "streamSettings": {
         "network": "ws",
         "wsSettings": {
-          "path": "/ws"
+          "path": "/${V2RAY_PATH}"
         },
         "security": "none"
       },
@@ -337,7 +363,7 @@ http {
             try_files \$uri \$uri/ =404;
         }
 
-        location /ws {
+        location /${V2RAY_PATH} {
             proxy_redirect off;
             proxy_pass http://127.0.0.1:44222;
             proxy_http_version 1.1;
@@ -394,15 +420,14 @@ cat > /etc/v2ray/config.json.client << EOF
       "streamSettings":{
         "network":"ws",
         "wsSettings":{
-          "path":"/ws"
+          "path":"/${V2RAY_PATH}"
         },
         "tlsSettings":{
           "serverName":"${PROXY_DOMAIN}"
         },
         "security":"tls"
       },
-      "protocol":"vmess",
-      "mux": {"enabled": true}
+      "protocol":"vmess"
     },
     {
       "tag":"direct",
@@ -495,7 +520,9 @@ EOF
 sysctl --system
 
 #7.2 增加文件描述符限制, <所有用户> <软限制和硬限制> <文件描述符> <整型数值>
-mkdir /etc/security/limits.d
+if [ ! -d  /etc/security/limits.d ]; then
+    mkdir /etc/security/limits.d
+fi
 echo "* - nofile 51200" > /etc/security/limits.d/default.conf;
 
 echo "conguatulations. install finished, please copy the config file to your local machine.";
