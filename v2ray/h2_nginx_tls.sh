@@ -172,7 +172,7 @@ http {
                       '\$status \$body_bytes_sent "\$http_referer" '
                       '"\$http_user_agent" "\$http_x_forwarded_for"';
 
-    access_log  /var/log/nginx/access.log  main;
+    access_log  off;
 
     sendfile        on;
     tcp_nopush      on;
@@ -348,9 +348,9 @@ http {
     server {
         listen  80;
         server_name ${PROXY_DOMAIN};
-        root    /export/www/${PROXY_DOMAIN};
-        index   index.html index.htm index.php;
+        rewrite ^(.*)$  https://$host$1 permanent;
     }
+
     server {
         listen 443 ssl http2;
 
@@ -379,7 +379,7 @@ http {
             proxy_read_timeout 300s;
         }
 
-        access_log    logs/access_${PROXY_DOMAIN}.log    main;
+        access_log  /var/log/nginx/access_${PROXY_DOMAIN}.log    main;
     }
 }
 EOF
