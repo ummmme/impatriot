@@ -20,12 +20,20 @@ node_list=(
 'london'
 'singapore'
 'tokyo2'
+'mumbai1'
 );
 
 #表头
 echo "服务器名称 | 服务器地址 | 平均延时 | 丢包率 | 下载速度" > /tmp/linode_tmp.log
 
 for node in ${node_list[@]}; do
+
+    if [ ${node} == "mumbai1" ]; then
+        file="100MB-mumbai.bin";
+    else
+        file="100MB-${node}.bin";
+    fi
+
     serverDomain="speedtest.${node}.linode.com"
 
     echo "正在测试${node}节点, 请稍候..."
@@ -35,7 +43,7 @@ for node in ${node_list[@]}; do
     #平均延时
     avgLag=`echo ${res}|awk -F 'min/avg/max/mdev =' '{print $2}' | awk -F '/' '{print $2}' | awk -F '.' '{print $1}'`;
     #平均下载速度(前10秒)
-    avgDown=$(curl -H 'Range: bytes=0-' -m 10 -Lo /dev/null -skw "%{speed_download}\n" http://speedtest.${node}.linode.com/100MB-${node}.bin | awk '{print int($0)}');
+    avgDown=$(curl -H 'Range: bytes=0-' -m 10 -Lo /dev/null -skw "%{speed_download}\n" http://${serverDomain}/${file} | awk '{print int($0)}');
     let "avgDownSpeed=${avgDown}/1000";
     echo "${node} | ${serverDomain} | ${avgLag}ms | ${lostRate} | ${avgDownSpeed}k" >> /tmp/linode_tmp.log;
 done
