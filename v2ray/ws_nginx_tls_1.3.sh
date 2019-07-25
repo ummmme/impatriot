@@ -356,7 +356,7 @@ chkconfig nginx on
 
 #4.2 配置nginx.conf, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
-if [ ! -f "../404/404.html" ]; then
+if [ ! -f "/usr/local/impatriot/404/404.html" ]; then
 echo "hello" > /export/www/${PROXY_DOMAIN}/index.html
 else
 cp ../404/404.html /export/www/${PROXY_DOMAIN}/index.html
@@ -420,7 +420,7 @@ mkdir -p /usr/local/nginx/ssl
 /root/.acme.sh/acme.sh --installcert -d ${PROXY_DOMAIN} \
 --key-file ${PROXY_DOMAIN_KEY_FILE} \
 --fullchain-file ${PROXY_DOMAIN_CERT_FILE} \
---reloadcmd "/etc/init.d/nginx start force-reload"
+--reloadcmd "/etc/init.d/nginx force-reload"
 
 #6.4 自动更新证书
 /root/.acme.sh/acme.sh  --upgrade  --auto-upgrade
@@ -534,7 +534,7 @@ http {
         ssl_session_timeout 60m;
 
         root /export/www/${PROXY_DOMAIN};
-        index index.html index.htm index.nginx-debian.html;
+        index index.html;
         server_name ${PROXY_DOMAIN};
         location / {
             try_files \$uri \$uri/ =404;
