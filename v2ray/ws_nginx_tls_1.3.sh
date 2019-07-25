@@ -19,8 +19,8 @@ available args:
 *-----------------------------------------------------------------------
 v2ray 一键安装脚本，自动安装v2ray, nginx, 自动申请证书，自动更新证书，自动生成websocket+nginx+tls模式的服务端和客户端配置
 使用方式：分别执行以下两行命令
-[1] cd /usr/local && git clone https://github.com/abcfyk/impatriot.git && cd impatriot/v2ray
-[2] bash ws_nginx_tls_1.3.sh -d 你的域名
+cd /usr/local && git clone https://github.com/abcfyk/impatriot.git && cd impatriot/v2ray
+sh ws_nginx_tls_1.3.sh -d 你的域名
 注意： 使用本脚本前必须先将域名指向这台服务器
 *-----------------------------------------------------------------------
 EOF
@@ -75,7 +75,7 @@ if [[ "${CURRENT_IP}" != "${DOMAIN_IP}" ]]; then
 fi
 
 #请勿修改以下配置-------------------------------------------
-#配置二级域名来转发v2ray流量，不要用一级域名
+#配置三级域名来转发v2ray流量，不要用二级域名
 PROXY_DOMAIN_CERT_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.fullchain.cer"
 PROXY_DOMAIN_KEY_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.key"
 
@@ -165,7 +165,7 @@ make
 make install
 
 ln -s /usr/local/nginx/sbin/nginx /usr/sbin/nginx
-nginx start
+nginx
 
 #4.2 配置nginx.conf, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
@@ -217,7 +217,7 @@ http {
 EOF
 
 #5. 重启
-/usr/local/nginx/sbin/nginx restart
+nginx -s stop && nginx
 
 #6. 安装acme.sh 自动更新tls证书
 curl  https://get.acme.sh | sh
@@ -450,7 +450,7 @@ cat > /etc/v2ray/config.json.client << EOF
 EOF
 
 #6.4 重启nginx and v2ray
-nginx restart
+nginx -s stop && nginx
 systemctl restart v2ray
 
 #7. 优化
