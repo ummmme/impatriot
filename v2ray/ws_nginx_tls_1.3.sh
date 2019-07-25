@@ -20,7 +20,7 @@ available args:
 v2ray 一键安装脚本，自动安装v2ray, nginx, 自动申请证书，自动更新证书，自动生成websocket+nginx+tls模式的服务端和客户端配置
 使用方式：分别执行以下两行命令
 cd /usr/local && git clone https://github.com/abcfyk/impatriot.git && cd impatriot/v2ray
-nohup bash ws_nginx_tls_1.3.sh -d f3.immm.site 2>&1 &
+bash ws_nginx_tls_1.3.sh -d 你的域名
 注意： 使用本脚本前必须先将域名指向这台服务器
 *-----------------------------------------------------------------------
 EOF
@@ -195,9 +195,9 @@ sysconfig=`/usr/bin/basename \$SCRIPTNAME`
 
 DESC=\${DESC:-nginx}
 NAME=\${NAME:-nginx}
-CONFFILE=\${CONFFILE:-/etc/nginx/nginx.conf}
-DAEMON=\${DAEMON:-/usr/sbin/nginx}
-PIDFILE=\${PIDFILE:-/var/run/nginx.pid}
+CONFFILE=\${CONFFILE:-/usr/local/nginx/conf/nginx.conf}
+DAEMON=\${DAEMON:-/usr/local/nginx/sbin/nginx}
+PIDFILE=\${PIDFILE:-/usr/local/nginx/logs/nginx.pid}
 SLEEPSEC=\${SLEEPSEC:-1}
 UPGRADEWAITLOOPS=\${UPGRADEWAITLOOPS:-5}
 CHECKSLEEP=\${CHECKSLEEP:-3}
