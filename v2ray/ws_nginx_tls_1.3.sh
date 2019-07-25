@@ -20,7 +20,7 @@ available args:
 v2ray 一键安装脚本，自动安装v2ray, nginx, 自动申请证书，自动更新证书，自动生成websocket+nginx+tls模式的服务端和客户端配置
 使用方式：分别执行以下两行命令
 [1] cd /usr/local && git clone https://github.com/abcfyk/impatriot.git && cd impatriot/v2ray
-[2] bash ws_nginx_tls.sh -d 你的域名
+[2] bash ws_nginx_tls_1.3.sh -d 你的域名
 注意： 使用本脚本前必须先将域名指向这台服务器
 *-----------------------------------------------------------------------
 EOF
@@ -150,7 +150,6 @@ cd nginx-1.17.2
 ./configure --user=www \
 --group=www \
 --prefix=/usr/local/nginx \
---sbin-path=/usr/sbin/nginx \
 --with-openssl=/usr/local/openssl-1.1.1c \
 --with-openssl-opt='enable-tls1_3' \
 --with-http_v2_module \
@@ -165,6 +164,8 @@ cd nginx-1.17.2
 make
 make install
 
+ln -s /usr/local/nginx/sbin/nginx /usr/sbin/nginx
+nginx start
 
 #4.2 配置nginx.conf, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
