@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# VPS一键安装V2ray脚本(websocket + nginx + tls)(Ubuntu18.04)
+# VPS一键安装V2ray脚本(使用TLS1.3，优化TLS1.2上的安全性问题)
 #0. 前言：必须先在dns服务商将二级域名指向新开的服务器，再在服务器上执行本脚本
 #1. 更新系统
 #2. 安装Nginx
@@ -7,9 +7,7 @@
 #4. 安装V2ray, 配置生成：https://www.veekxt.com/utils/v2ray_gen
 #5. 安装完成后，将服务器上的/etc/v2ray/config.json.client 文件复制到本地的/etc/v2ray 文件夹下，并重命名为config.json后，重启本地v2ray即可
 #6. PS：实测使用websocket+nginx+tls模拟 正常访问网站已经足够绕过GFW识别，没有持续大流量访问的情况下，没有必要用Cloudfare的CDN
-#Date: 2019-06-16
-#2019-06-20: 增加一个404页面作为二级域名的主页
-#2019-06-27: 随机生成websocket的链接，随机生成字符串作为v2ray的链接，不再固定为ws
+#Date: 2019-07-24
 
 
 #说明
@@ -132,9 +130,34 @@ echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
 sysctl -p
 sysctl net.ipv4.tcp_available_congestion_control
 
-#4. 安装Nginx
-#4.1 安装
-apt install -y nginx
+#4. 编译安装Nginx，开启tls1.3支持
+#4.1.1 安装依赖
+sudo apt-get install build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git
+#4.1.2 安装openssl
+wget https://www.openssl.org/source/openssl-1.1.1c.tar.gz
+tar xf openssl-1.1.1c.tar.gz && rm openssl-1.1.1c.tar.gz
+#4.1.3 下载nginx
+wget https://nginx.org/download/nginx-1.17.2.tar.gz
+tar zxvf nginx-1.17.2.tar.gz && rm nginx-1.17.2.tar.gz
+cd nginx-1.17.2
+
+#编译
+./configure --user=www \
+--group=www \
+--prefix=/usr/local/nginx \
+--with-openssl=../openssl-1.1.1c \
+--with-openssl-opt='enable-tls1_3' \
+--with-http_v2_module \
+--with-http_ssl_module \
+--with-http_gzip_static_module \
+--with-http_stub_status_module \
+--with-http_sub_module \
+--with-stream \
+--with-stream_ssl_module
+
+#安装
+make && make install
+
 
 #4.2 配置nginx.conf, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
@@ -337,17 +360,17 @@ http {
     #站点配置
     server {
         listen  80;
-        server_name ${PROXY_DOMAIN};
+        server_name ;
         rewrite ^(.*)$  https://\$host\$1 permanent;
     }
     server {
-        listen 443 ssl;
+        listen 443 ssl default_server;
 
         ssl on;
         ssl_certificate       ${PROXY_DOMAIN_CERT_FILE};
         ssl_certificate_key   ${PROXY_DOMAIN_KEY_FILE};
-        ssl_protocols         TLSv1.1 TLSv1.2;
-        ssl_ciphers           EECDH+CHACHA20:EECDH+AES128:RSA+AES128:EECDH+AES256:RSA+AES256:EECDH+3DES:RSA+3DES:!MD5;
+        ssl_protocols         TLSv1.3;
+        ssl_ciphers 'CHACHA20:EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH:ECDHE-RSA-AES128-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA128:DHE-RSA-AES128-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-GCM-SHA128:ECDHE-RSA-AES128-SHA384:ECDHE-RSA-AES128-SHA128:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES128-SHA128:DHE-RSA-AES128-SHA128:DHE-RSA-AES128-SHA:DHE-RSA-AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA384:AES128-GCM-SHA128:AES128-SHA128:AES128-SHA128:AES128-SHA:AES128-SHA:DES-CBC3-SHA:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!MD5:!PSK:!RC4;';
         ssl_prefer_server_ciphers on; #优化SSL加密
         ssl_session_cache shared:SSL:10m;
         ssl_session_timeout 60m;
