@@ -637,7 +637,7 @@ cat > /etc/v2ray/config.json.client << EOF
 EOF
 
 #6.4 重启nginx and v2ray
-nginx -s stop && nginx
+/etc/init.d/nginx restart
 systemctl restart v2ray
 
 #7. 优化
