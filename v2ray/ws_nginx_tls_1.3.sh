@@ -20,7 +20,7 @@ available args:
 v2ray 一键安装脚本，自动安装v2ray, nginx, 自动申请证书，自动更新证书，自动生成websocket+nginx+tls模式的服务端和客户端配置
 使用方式：分别执行以下两行命令
 cd /usr/local && git clone https://github.com/abcfyk/impatriot.git && cd impatriot/v2ray
-bash ws_nginx_tls_1.3.sh -d 你的域名
+nohup bash ws_nginx_tls_1.3.sh -d f3.immm.site 2>&1 &
 注意： 使用本脚本前必须先将域名指向这台服务器
 *-----------------------------------------------------------------------
 EOF
@@ -165,129 +165,194 @@ make
 make install
 
 #创建软链接
-ln -s /usr/local/nginx/sbin/nginx /usr/bin/nginx
+ln -s /usr/local/nginx/sbin/nginx /usr/sbin/nginx
 
 #创建快捷命令
 cat > /etc/init.d/nginx << EOF
 #!/bin/sh
-#
-# nginx - this script starts and stops the nginx daemon
-#
-# chkconfig:   - 85 15
-# description:  NGINX is an HTTP(S) server, HTTP(S) reverse \
-#               proxy and IMAP/POP3 proxy server
-# processname: nginx
-# config:      /usr/local/nginx/conf/nginx.conf
-# config:      /etc/sysconfig/nginx
-# pidfile:     /usr/local/nginx/logs/nginx.pid
-# Source function library.
-. /etc/rc.d/init.d/functions
-# Source networking configuration.
-. /etc/sysconfig/network
-# Check that networking is up.
-[ "\$NETWORKING" = "no" ] && exit 0
-nginx="/usr/local/nginx/sbin/nginx"
-prog=\$(basename \$nginx)
-NGINX_CONF_FILE="/usr/local/nginx/conf/nginx.conf"
-[ -f /etc/sysconfig/nginx ] && . /etc/sysconfig/nginx
-lockfile=/var/lock/subsys/nginx
-make_dirs() {
-   # make required directories
-   user=`\$nginx -V 2>&1 | grep "configure arguments:" | sed 's/[^*]*--user=\([^ ]*\).*/\1/g' -`
-   if [ -z "`grep \$user /etc/passwd`" ]; then
-       useradd -M -s /bin/nologin \$user
-   fi
-   options=`\$nginx -V 2>&1 | grep 'configure arguments:'`
-   for opt in \$options; do
-       if [ `echo \$opt | grep '.*-temp-path'` ]; then
-           value=`echo \$opt | cut -d "=" -f 2`
-           if [ ! -d "\$value" ]; then
-               # echo "creating" \$value
-               mkdir -p \$value && chown -R \$user \$value
-           fi
-       fi
-   done
+### BEGIN INIT INFO
+# Provides:          nginx
+# Required-Start:    \$network \$remote_fs \$local_fs
+# Required-Stop:     \$network \$remote_fs \$local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Stop/start nginx
+### END INIT INFO
+
+# Author: Sergey Budnevitch <sb@nginx.com>
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+
+if [ -L \$0 ]; then
+    SCRIPTNAME=`/bin/readlink -f \$0`
+else
+    SCRIPTNAME=\$0
+fi
+
+sysconfig=`/usr/bin/basename \$SCRIPTNAME`
+
+[ -r /etc/default/\$sysconfig ] && . /etc/default/\$sysconfig
+
+DESC=\${DESC:-nginx}
+NAME=\${NAME:-nginx}
+CONFFILE=\${CONFFILE:-/etc/nginx/nginx.conf}
+DAEMON=\${DAEMON:-/usr/sbin/nginx}
+PIDFILE=\${PIDFILE:-/var/run/nginx.pid}
+SLEEPSEC=\${SLEEPSEC:-1}
+UPGRADEWAITLOOPS=\${UPGRADEWAITLOOPS:-5}
+CHECKSLEEP=\${CHECKSLEEP:-3}
+
+[ -x \$DAEMON ] || exit 0
+
+DAEMON_ARGS="-c \$CONFFILE \$DAEMON_ARGS"
+
+. /lib/init/vars.sh
+
+. /lib/lsb/init-functions
+
+do_start()
+{
+    start-stop-daemon --start --quiet --pidfile \$PIDFILE --exec \$DAEMON -- \
+        \$DAEMON_ARGS
+    RETVAL="\$?"
+    return "\$RETVAL"
 }
-start() {
-    [ -x \$nginx ] || exit 5
-    [ -f \$NGINX_CONF_FILE ] || exit 6
-    make_dirs
-    echo -n \$"Starting \$prog: "
-    daemon \$nginx -c \$NGINX_CONF_FILE
-    retval=\$?
-    echo
-    [ \$retval -eq 0 ] && touch \$lockfile
-    return \$retval
+
+do_stop()
+{
+    # Return
+    #   0 if daemon has been stopped
+    #   1 if daemon was already stopped
+    #   2 if daemon could not be stopped
+    #   other if a failure occurred
+    start-stop-daemon --stop --quiet --oknodo --retry=TERM/30/KILL/5 --pidfile \$PIDFILE
+    RETVAL="\$?"
+    rm -f \$PIDFILE
+    return "\$RETVAL"
 }
-stop() {
-    echo -n \$"Stopping \$prog: "
-    killproc \$prog -QUIT
-    retval=\$?
-    echo
-    [ \$retval -eq 0 ] && rm -f \$lockfile
-    return \$retval
+
+do_reload() {
+    #
+    start-stop-daemon --stop --signal HUP --quiet --pidfile \$PIDFILE
+    RETVAL="\$?"
+    return "\$RETVAL"
 }
-restart() {
-    configtest || return \$?
-    stop
-    sleep 1
-    start
+
+do_configtest() {
+    if [ "\$#" -ne 0 ]; then
+        case "\$1" in
+            -q)
+                FLAG=\$1
+                ;;
+            *)
+                ;;
+        esac
+        shift
+    fi
+    \$DAEMON -t \$FLAG -c \$CONFFILE
+    RETVAL="\$?"
+    return \$RETVAL
 }
-reload() {
-    configtest || return \$?
-    echo -n \$"Reloading \$prog: "
-    killproc \$nginx -HUP
-    RETVAL=\$?
-    echo
+
+do_upgrade() {
+    OLDBINPIDFILE=\$PIDFILE.oldbin
+
+    do_configtest -q || return 6
+    start-stop-daemon --stop --signal USR2 --quiet --pidfile \$PIDFILE
+    RETVAL="\$?"
+
+    for i in `/usr/bin/seq  \$UPGRADEWAITLOOPS`; do
+        sleep \$SLEEPSEC
+        if [ -f \$OLDBINPIDFILE -a -f \$PIDFILE ]; then
+            start-stop-daemon --stop --signal QUIT --quiet --pidfile \$OLDBINPIDFILE
+            RETVAL="\$?"
+            return
+        fi
+    done
+
+    echo \$"Upgrade failed!"
+    RETVAL=1
+    return \$RETVAL
 }
-force_reload() {
-    restart
+
+do_checkreload() {
+    templog=`/bin/mktemp --tmpdir nginx-check-reload-XXXXXX.log`
+    trap '/bin/rm -f \$templog' 0
+    /usr/bin/tail --pid=\$\$ -n 0 --follow=name /var/log/nginx/error.log > \$templog &
+    /bin/sleep 1
+    start-stop-daemon --stop --signal HUP --quiet --pidfile \$PIDFILE
+    /bin/sleep \$CHECKSLEEP
+    /bin/grep -E "\[emerg\]|\[alert\]" \$templog
 }
-configtest() {
-  \$nginx -t -c \$NGINX_CONF_FILE
-}
-rh_status() {
-    status \$prog
-}
-rh_status_q() {
-    rh_status >/dev/null 2>&1
-}
+
 case "\$1" in
     start)
-        rh_status_q && exit 0
-        \$1
+        [ "\$VERBOSE" != no ] && log_daemon_msg "Starting \$DESC " "\$NAME"
+        do_start
+        case "\$?" in
+            0|1) [ "\$VERBOSE" != no ] && log_end_msg 0 ;;
+            2) [ "\$VERBOSE" != no ] && log_end_msg 1 ;;
+        esac
         ;;
     stop)
-        rh_status_q || exit 0
-        \$1
+        [ "\$VERBOSE" != no ] && log_daemon_msg "Stopping \$DESC" "\$NAME"
+        do_stop
+        case "\$?" in
+            0|1) [ "\$VERBOSE" != no ] && log_end_msg 0 ;;
+            2) [ "\$VERBOSE" != no ] && log_end_msg 1 ;;
+        esac
         ;;
-    restart|configtest)
-        \$1
+  status)
+        status_of_proc -p "\$PIDFILE" "\$DAEMON" "\$NAME" && exit 0 || exit \$?
         ;;
-    reload)
-        rh_status_q || exit 7
-        \$1
+  configtest)
+        do_configtest
         ;;
-    force-reload)
-        force_reload
+  upgrade)
+        do_upgrade
         ;;
-    status)
-        rh_status
+  reload|force-reload)
+        log_daemon_msg "Reloading \$DESC" "\$NAME"
+        do_reload
+        log_end_msg \$?
         ;;
-    condrestart|try-restart)
-        rh_status_q || exit 0
-            ;;
+  restart|force-reload)
+        log_daemon_msg "Restarting \$DESC" "\$NAME"
+        do_configtest -q || exit \$RETVAL
+        do_stop
+        case "\$?" in
+            0|1)
+                do_start
+                case "\$?" in
+                    0) log_end_msg 0 ;;
+                    1) log_end_msg 1 ;; # Old process is still running
+                    *) log_end_msg 1 ;; # Failed to start
+                esac
+                ;;
+            *)
+                # Failed to stop
+                log_end_msg 1
+                ;;
+        esac
+        ;;
+    check-reload)
+        do_checkreload
+        RETVAL=0
+        ;;
     *)
-        echo \$"Usage: \$0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload|configtest}"
-        exit 2
+        echo "Usage: \$SCRIPTNAME {start|stop|status|restart|reload|force-reload|upgrade|configtest|check-reload}" >&2
+        exit 3
+        ;;
 esac
+
+exit \$RETVAL
 EOF
 chmod a+x /etc/init.d/nginx
 chkconfig --add /etc/init.d/nginx
 chkconfig nginx on
 
 # 启动
-systemctl start nginx
+/etc/init.d/nginx start
 
 #4.2 配置nginx.conf, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
@@ -339,7 +404,7 @@ http {
 EOF
 
 #5. 重启
-systemctl restart nginx
+/etc/init.d/nginx restart
 
 #6. 安装acme.sh 自动更新tls证书
 curl  https://get.acme.sh | sh
@@ -355,7 +420,7 @@ mkdir -p /usr/local/nginx/ssl
 /root/.acme.sh/acme.sh --installcert -d ${PROXY_DOMAIN} \
 --key-file ${PROXY_DOMAIN_KEY_FILE} \
 --fullchain-file ${PROXY_DOMAIN_CERT_FILE} \
---reloadcmd "systemctl force-reload nginx"
+--reloadcmd "/etc/init.d/nginx start force-reload"
 
 #6.4 自动更新证书
 /root/.acme.sh/acme.sh  --upgrade  --auto-upgrade
