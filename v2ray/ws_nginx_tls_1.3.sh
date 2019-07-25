@@ -6,7 +6,6 @@
 #3. 申请证书：acme.sh
 #4. 安装V2ray, 配置生成：https://www.veekxt.com/utils/v2ray_gen
 #5. 安装完成后，将服务器上的/etc/v2ray/config.json.client 文件复制到本地的/etc/v2ray 文件夹下，并重命名为config.json后，重启本地v2ray即可
-#6. PS：实测使用websocket+nginx+tls模拟 正常访问网站已经足够绕过GFW识别，没有持续大流量访问的情况下，没有必要用Cloudfare的CDN
 #Date: 2019-07-24
 
 
@@ -77,8 +76,8 @@ fi
 
 #请勿修改以下配置-------------------------------------------
 #配置二级域名来转发v2ray流量，不要用一级域名
-PROXY_DOMAIN_CERT_FILE="/etc/nginx/ssl/${PROXY_DOMAIN}.fullchain.cer"
-PROXY_DOMAIN_KEY_FILE="/etc/nginx/ssl/${PROXY_DOMAIN}.key"
+PROXY_DOMAIN_CERT_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.fullchain.cer"
+PROXY_DOMAIN_KEY_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.key"
 
 #UUID
 UUID=`cat /proc/sys/kernel/random/uuid`;
@@ -132,10 +131,16 @@ sysctl net.ipv4.tcp_available_congestion_control
 
 #4. 编译安装Nginx，开启tls1.3支持
 #4.1.1 安装依赖
-sudo apt-get install build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git
+groupadd www # 添加组
+useradd -s /sbin/nologin -g www www #添加用户
+
+cd /usr/local
+sudo apt-get install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git
+
 #4.1.2 安装openssl
 wget https://www.openssl.org/source/openssl-1.1.1c.tar.gz
 tar xf openssl-1.1.1c.tar.gz && rm openssl-1.1.1c.tar.gz
+
 #4.1.3 下载nginx
 wget https://nginx.org/download/nginx-1.17.2.tar.gz
 tar zxvf nginx-1.17.2.tar.gz && rm nginx-1.17.2.tar.gz
@@ -145,7 +150,8 @@ cd nginx-1.17.2
 ./configure --user=www \
 --group=www \
 --prefix=/usr/local/nginx \
---with-openssl=../openssl-1.1.1c \
+--sbin-path=/usr/sbin/nginx \
+--with-openssl=/usr/local/openssl-1.1.1c \
 --with-openssl-opt='enable-tls1_3' \
 --with-http_v2_module \
 --with-http_ssl_module \
@@ -156,7 +162,8 @@ cd nginx-1.17.2
 --with-stream_ssl_module
 
 #安装
-make && make install
+make
+make install
 
 
 #4.2 配置nginx.conf, 默认主页为404页面
@@ -166,14 +173,13 @@ echo "hello" > /export/www/${PROXY_DOMAIN}/index.html
 else
 cp ../404/404.html /export/www/${PROXY_DOMAIN}/index.html
 fi
-mkdir -p /var/log/nginx
 
-mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
-cat >  /etc/nginx/nginx.conf << EOF
-user  www-data;
+mv /usr/local/nginx/conf/nginx.conf /usr/local/nginx/conf/nginx.conf.bak
+cat >  /usr/local/nginx/conf/nginx.conf << EOF
+user  www;
 worker_processes  auto;
 
-error_log  /var/log/nginx/error.log warn;
+error_log  /usr/local/nginx/logs/error.log warn;
 pid        /var/run/nginx.pid;
 
 worker_rlimit_nofile 65535;
@@ -184,38 +190,20 @@ events {
 }
 
 http {
-    include       /etc/nginx/mime.types;
+    include       mime.types;
     default_type  application/octet-stream;
 
+    access_log  off;
     charset utf-8;
     client_header_buffer_size 32k; #上传文件大小限制
     large_client_header_buffers 4 64k; #设定请求缓
     client_max_body_size 8m; #设定请求缓存大小
-
-    log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
-                      '\$status \$body_bytes_sent "\$http_referer" '
-                      '"\$http_user_agent" "\$http_x_forwarded_for"';
-
-    access_log  /var/log/nginx/access.log  main;
 
     sendfile        on;
     tcp_nopush      on;
     tcp_nodelay     on;
 
     keepalive_timeout  60;
-
-    #gzip模块设置
-    gzip               on;
-    gzip_vary          on;
-    gzip_comp_level    6;
-    gzip_buffers       16 8k;
-    gzip_min_length    1000;
-    gzip_proxied       any;
-    gzip_disable       "msie6";
-    gzip_http_version  1.0;
-    gzip_types         text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript application/javascript;
-
-    include /etc/nginx/conf.d/*.conf;
 
     #站点配置
     server {
@@ -228,14 +216,14 @@ http {
 EOF
 
 #5. 重启
-service nginx restart
+/usr/local/nginx/sbin/nginx restart
 
 #6. 安装acme.sh 自动更新tls证书
 curl  https://get.acme.sh | sh
 source ~/.bashrc
 
 #6.1 创建证书存放文件夹
-mkdir -p /etc/nginx/ssl
+mkdir -p /usr/local/nginx/ssl
 
 #6.2 申请证书
 /root/.acme.sh/acme.sh  --issue -d ${PROXY_DOMAIN} --webroot /export/www/${PROXY_DOMAIN}
@@ -244,7 +232,7 @@ mkdir -p /etc/nginx/ssl
 /root/.acme.sh/acme.sh --installcert -d ${PROXY_DOMAIN} \
 --key-file ${PROXY_DOMAIN_KEY_FILE} \
 --fullchain-file ${PROXY_DOMAIN_CERT_FILE} \
---reloadcmd "service nginx force-reload"
+--reloadcmd "/usr/local/nginx/sbin/nginx force-reload"
 
 #6.4 自动更新证书
 /root/.acme.sh/acme.sh  --upgrade  --auto-upgrade
@@ -316,11 +304,11 @@ EOF
 
 
 #6.2 更新Nginx的tls配置
-cat >  /etc/nginx/nginx.conf << EOF
-user  www-data;
+cat >  /usr/local/nginx/conf/nginx.conf << EOF
+user  www;
 worker_processes  auto;
 
-error_log  /var/log/nginx/error.log warn;
+error_log  /usr/local/nginx/logs/error.log warn;
 pid        /var/run/nginx.pid;
 
 worker_rlimit_nofile 65535;
@@ -332,7 +320,7 @@ events {
 }
 
 http {
-    include       /etc/nginx/mime.types;
+    include       mime.types;
     default_type  application/octet-stream;
 
     charset utf-8;
@@ -344,25 +332,7 @@ http {
 
     keepalive_timeout  60;
 
-    #gzip模块设置
-    gzip               on;
-    gzip_vary          on;
-    gzip_comp_level    6;
-    gzip_buffers       16 8k;
-    gzip_min_length    1000;
-    gzip_proxied       any;
-    gzip_disable       "msie6";
-    gzip_http_version  1.0;
-    gzip_types         text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript application/javascript;
-
-    include /etc/nginx/conf.d/*.conf;
-
     #站点配置
-    server {
-        listen  80;
-        server_name ;
-        rewrite ^(.*)$  https://\$host\$1 permanent;
-    }
     server {
         listen 443 ssl default_server;
 
@@ -377,7 +347,7 @@ http {
 
         root /export/www/${PROXY_DOMAIN};
         index index.html index.htm index.nginx-debian.html;
-        server_name _;
+        server_name ${PROXY_DOMAIN};
         location / {
             try_files \$uri \$uri/ =404;
         }
@@ -479,7 +449,7 @@ cat > /etc/v2ray/config.json.client << EOF
 EOF
 
 #6.4 重启nginx and v2ray
-service nginx restart
+nginx restart
 systemctl restart v2ray
 
 #7. 优化
