@@ -20,7 +20,7 @@ available args:
 v2ray 一键安装脚本，自动安装v2ray, nginx, 自动申请证书，自动更新证书，自动生成websocket+nginx+tls模式的服务端和客户端配置
 使用方式：分别执行以下两行命令
 cd /usr/local && git clone https://github.com/abcfyk/impatriot.git && cd impatriot/v2ray
-sh ws_nginx_tls_1.3.sh -d 你的域名
+bash ws_nginx_tls_1.3.sh -d 你的域名
 注意： 使用本脚本前必须先将域名指向这台服务器
 *-----------------------------------------------------------------------
 EOF
@@ -164,8 +164,130 @@ cd nginx-1.17.2
 make
 make install
 
-ln -s /usr/local/nginx/sbin/nginx /usr/sbin/nginx
-nginx
+#创建软链接
+ln -s /usr/local/nginx/sbin/nginx /usr/bin/nginx
+
+#创建快捷命令
+cat > /etc/init.d/nginx << EOF
+#!/bin/sh
+#
+# nginx - this script starts and stops the nginx daemon
+#
+# chkconfig:   - 85 15
+# description:  NGINX is an HTTP(S) server, HTTP(S) reverse \
+#               proxy and IMAP/POP3 proxy server
+# processname: nginx
+# config:      /usr/local/nginx/conf/nginx.conf
+# config:      /etc/sysconfig/nginx
+# pidfile:     /usr/local/nginx/logs/nginx.pid
+# Source function library.
+. /etc/rc.d/init.d/functions
+# Source networking configuration.
+. /etc/sysconfig/network
+# Check that networking is up.
+[ "\$NETWORKING" = "no" ] && exit 0
+nginx="/usr/local/nginx/sbin/nginx"
+prog=\$(basename \$nginx)
+NGINX_CONF_FILE="/usr/local/nginx/conf/nginx.conf"
+[ -f /etc/sysconfig/nginx ] && . /etc/sysconfig/nginx
+lockfile=/var/lock/subsys/nginx
+make_dirs() {
+   # make required directories
+   user=`\$nginx -V 2>&1 | grep "configure arguments:" | sed 's/[^*]*--user=\([^ ]*\).*/\1/g' -`
+   if [ -z "`grep \$user /etc/passwd`" ]; then
+       useradd -M -s /bin/nologin \$user
+   fi
+   options=`\$nginx -V 2>&1 | grep 'configure arguments:'`
+   for opt in \$options; do
+       if [ `echo \$opt | grep '.*-temp-path'` ]; then
+           value=`echo \$opt | cut -d "=" -f 2`
+           if [ ! -d "\$value" ]; then
+               # echo "creating" \$value
+               mkdir -p \$value && chown -R \$user \$value
+           fi
+       fi
+   done
+}
+start() {
+    [ -x \$nginx ] || exit 5
+    [ -f \$NGINX_CONF_FILE ] || exit 6
+    make_dirs
+    echo -n \$"Starting \$prog: "
+    daemon \$nginx -c \$NGINX_CONF_FILE
+    retval=\$?
+    echo
+    [ \$retval -eq 0 ] && touch \$lockfile
+    return \$retval
+}
+stop() {
+    echo -n \$"Stopping \$prog: "
+    killproc \$prog -QUIT
+    retval=\$?
+    echo
+    [ \$retval -eq 0 ] && rm -f \$lockfile
+    return \$retval
+}
+restart() {
+    configtest || return \$?
+    stop
+    sleep 1
+    start
+}
+reload() {
+    configtest || return \$?
+    echo -n \$"Reloading \$prog: "
+    killproc \$nginx -HUP
+    RETVAL=\$?
+    echo
+}
+force_reload() {
+    restart
+}
+configtest() {
+  \$nginx -t -c \$NGINX_CONF_FILE
+}
+rh_status() {
+    status \$prog
+}
+rh_status_q() {
+    rh_status >/dev/null 2>&1
+}
+case "\$1" in
+    start)
+        rh_status_q && exit 0
+        \$1
+        ;;
+    stop)
+        rh_status_q || exit 0
+        \$1
+        ;;
+    restart|configtest)
+        \$1
+        ;;
+    reload)
+        rh_status_q || exit 7
+        \$1
+        ;;
+    force-reload)
+        force_reload
+        ;;
+    status)
+        rh_status
+        ;;
+    condrestart|try-restart)
+        rh_status_q || exit 0
+            ;;
+    *)
+        echo \$"Usage: \$0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload|configtest}"
+        exit 2
+esac
+EOF
+chmod a+x /etc/init.d/nginx
+chkconfig --add /etc/init.d/nginx
+chkconfig nginx on
+
+# 启动
+systemctl start nginx
 
 #4.2 配置nginx.conf, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
@@ -217,7 +339,7 @@ http {
 EOF
 
 #5. 重启
-nginx -s stop && nginx
+systemctl restart nginx
 
 #6. 安装acme.sh 自动更新tls证书
 curl  https://get.acme.sh | sh
@@ -233,7 +355,7 @@ mkdir -p /usr/local/nginx/ssl
 /root/.acme.sh/acme.sh --installcert -d ${PROXY_DOMAIN} \
 --key-file ${PROXY_DOMAIN_KEY_FILE} \
 --fullchain-file ${PROXY_DOMAIN_CERT_FILE} \
---reloadcmd "/usr/local/nginx/sbin/nginx force-reload"
+--reloadcmd "systemctl force-reload nginx"
 
 #6.4 自动更新证书
 /root/.acme.sh/acme.sh  --upgrade  --auto-upgrade
