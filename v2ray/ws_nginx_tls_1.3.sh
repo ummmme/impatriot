@@ -131,9 +131,6 @@ sysctl net.ipv4.tcp_available_congestion_control
 
 #4. 编译安装Nginx，开启tls1.3支持
 #4.1.1 安装依赖
-groupadd www # 添加组
-useradd -s /sbin/nologin -g www www #添加用户
-
 cd /usr/local
 sudo apt-get install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git
 
@@ -147,9 +144,8 @@ tar zxvf nginx-1.17.2.tar.gz && rm nginx-1.17.2.tar.gz
 cd nginx-1.17.2
 
 #编译
-./configure --user=www \
---group=www \
---prefix=/usr/local/nginx \
+./configure --prefix=/usr/local/nginx \
+--sbin-path=/usr/sbin/nginx \
 --with-openssl=/usr/local/openssl-1.1.1c \
 --with-openssl-opt='enable-tls1_3' \
 --with-http_v2_module \
@@ -362,7 +358,6 @@ fi
 
 mv /usr/local/nginx/conf/nginx.conf /usr/local/nginx/conf/nginx.conf.bak
 cat >  /usr/local/nginx/conf/nginx.conf << EOF
-user  www;
 worker_processes  auto;
 
 error_log  /usr/local/nginx/logs/error.log warn;
@@ -491,7 +486,6 @@ EOF
 
 #6.2 更新Nginx的tls配置
 cat >  /usr/local/nginx/conf/nginx.conf << EOF
-user  www;
 worker_processes  auto;
 
 error_log  /usr/local/nginx/logs/error.log warn;
