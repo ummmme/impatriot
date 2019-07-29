@@ -139,7 +139,7 @@ sudo apt-get install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip g
 
 #4.1.2 安装openssl
 wget https://www.openssl.org/source/openssl-1.1.1c.tar.gz
-tar xf openssl-1.1.1c.tar.gz && rm openssl-1.1.1c.tar.gz
+tar zxvf openssl-1.1.1c.tar.gz && rm openssl-1.1.1c.tar.gz
 
 #4.1.3 下载nginx
 wget https://nginx.org/download/nginx-1.17.2.tar.gz
@@ -162,8 +162,7 @@ cd nginx-1.17.2
 --with-stream_ssl_module
 
 #安装
-make
-make install
+make && make install
 
 #创建快捷命令
 cat > /etc/init.d/nginx << EOF
@@ -181,23 +180,11 @@ cat > /etc/init.d/nginx << EOF
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 
-if [ -L \$0 ]; then
-    SCRIPTNAME=`/bin/readlink -f \$0`
-else
-    SCRIPTNAME=\$0
-fi
-
-sysconfig=`/usr/bin/basename \$SCRIPTNAME`
-
-[ -r /etc/default/\$sysconfig ] && . /etc/default/\$sysconfig
-
-DESC=\${DESC:-nginx}
-NAME=\${NAME:-nginx}
-CONFFILE=\${CONFFILE:-/usr/local/nginx/conf/nginx.conf}
-DAEMON=\${DAEMON:-/usr/local/nginx/sbin/nginx}
-PIDFILE=\${PIDFILE:-/var/run/nginx.pid}
-SLEEPSEC=\${SLEEPSEC:-1}
-UPGRADEWAITLOOPS=\${UPGRADEWAITLOOPS:-5}
+DESC="nginx"
+NAME="nginx"
+CONFFILE="/usr/local/nginx/conf/nginx.conf"
+DAEMON="/usr/local/nginx/sbin/nginx"
+PIDFILE="/var/run/nginx.pid"
 CHECKSLEEP=\${CHECKSLEEP:-3}
 
 [ -x \$DAEMON ] || exit 0
@@ -252,27 +239,6 @@ do_configtest() {
     return \$RETVAL
 }
 
-do_upgrade() {
-    OLDBINPIDFILE=\$PIDFILE.oldbin
-
-    do_configtest -q || return 6
-    start-stop-daemon --stop --signal USR2 --quiet --pidfile \$PIDFILE
-    RETVAL="\$?"
-
-    for i in `/usr/bin/seq  \$UPGRADEWAITLOOPS`; do
-        sleep \$SLEEPSEC
-        if [ -f \$OLDBINPIDFILE -a -f \$PIDFILE ]; then
-            start-stop-daemon --stop --signal QUIT --quiet --pidfile \$OLDBINPIDFILE
-            RETVAL="\$?"
-            return
-        fi
-    done
-
-    echo \$"Upgrade failed!"
-    RETVAL=1
-    return \$RETVAL
-}
-
 do_checkreload() {
     templog=`/bin/mktemp --tmpdir nginx-check-reload-XXXXXX.log`
     trap '/bin/rm -f \$templog' 0
@@ -306,9 +272,6 @@ case "\$1" in
   configtest)
         do_configtest
         ;;
-  upgrade)
-        do_upgrade
-        ;;
   reload|force-reload)
         log_daemon_msg "Reloading \$DESC" "\$NAME"
         do_reload
@@ -333,12 +296,8 @@ case "\$1" in
                 ;;
         esac
         ;;
-    check-reload)
-        do_checkreload
-        RETVAL=0
-        ;;
     *)
-        echo "Usage: \$SCRIPTNAME {start|stop|status|restart|reload|force-reload|upgrade|configtest|check-reload}" >&2
+        echo "Usage: /etc/init.d/nginx {start|stop|status|restart|reload|force-reload|configtest}" >&2
         exit 3
         ;;
 esac
@@ -355,7 +314,7 @@ mkdir -p /export/www/${PROXY_DOMAIN}
 if [ ! -f "/usr/local/impatriot/404/404.html" ]; then
 echo "hello" > /export/www/${PROXY_DOMAIN}/index.html
 else
-cp ../404/404.html /export/www/${PROXY_DOMAIN}/index.html
+cp /usr/local/impatriot/404/404.html /export/www/${PROXY_DOMAIN}/index.html
 fi
 
 mv /usr/local/nginx/conf/nginx.conf /usr/local/nginx/conf/nginx.conf.bak
