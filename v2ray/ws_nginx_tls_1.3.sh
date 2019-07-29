@@ -278,7 +278,7 @@ do_upgrade() {
 do_checkreload() {
     templog=`/bin/mktemp --tmpdir nginx-check-reload-XXXXXX.log`
     trap '/bin/rm -f \$templog' 0
-    /usr/bin/tail --pid=\$\$ -n 0 --follow=name /var/log/nginx/error.log > \$templog &
+    /usr/bin/tail --pid=\$\$ -n 0 --follow=name /usr/local/nginx/logs/error.log > \$templog &
     /bin/sleep 1
     start-stop-daemon --stop --signal HUP --quiet --pidfile \$PIDFILE
     /bin/sleep \$CHECKSLEEP
@@ -348,11 +348,9 @@ esac
 exit \$RETVAL
 EOF
 chmod a+x /etc/init.d/nginx
-chkconfig --add /etc/init.d/nginx
-chkconfig nginx on
 
 # 启动
-/etc/init.d/nginx start
+/etc/init.d/nginx restart
 
 #4.2 配置nginx.conf, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
