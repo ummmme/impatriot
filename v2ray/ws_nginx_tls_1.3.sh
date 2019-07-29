@@ -131,6 +131,9 @@ sysctl net.ipv4.tcp_available_congestion_control
 
 #4. 编译安装Nginx，开启tls1.3支持
 #4.1.1 安装依赖
+groupadd www # 添加组
+useradd -s /sbin/nologin -g www www #添加用户
+
 cd /usr/local
 sudo apt-get install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git
 
@@ -144,7 +147,9 @@ tar zxvf nginx-1.17.2.tar.gz && rm nginx-1.17.2.tar.gz
 cd nginx-1.17.2
 
 #编译
-./configure --prefix=/usr/local/nginx \
+./configure --user=www \
+--group=www \
+--prefix=/usr/local/nginx \
 --sbin-path=/usr/sbin/nginx \
 --with-openssl=/usr/local/openssl-1.1.1c \
 --with-openssl-opt='enable-tls1_3' \
@@ -159,9 +164,6 @@ cd nginx-1.17.2
 #安装
 make
 make install
-
-#创建软链接
-ln -s /usr/local/nginx/sbin/nginx /usr/sbin/nginx
 
 #创建快捷命令
 cat > /etc/init.d/nginx << EOF
@@ -193,7 +195,7 @@ DESC=\${DESC:-nginx}
 NAME=\${NAME:-nginx}
 CONFFILE=\${CONFFILE:-/usr/local/nginx/conf/nginx.conf}
 DAEMON=\${DAEMON:-/usr/local/nginx/sbin/nginx}
-PIDFILE=\${PIDFILE:-/usr/local/nginx/logs/nginx.pid}
+PIDFILE=\${PIDFILE:-/var/run/nginx.pid}
 SLEEPSEC=\${SLEEPSEC:-1}
 UPGRADEWAITLOOPS=\${UPGRADEWAITLOOPS:-5}
 CHECKSLEEP=\${CHECKSLEEP:-3}
@@ -346,7 +348,7 @@ EOF
 chmod a+x /etc/init.d/nginx
 
 # 启动
-/etc/init.d/nginx restart
+/etc/init.d/nginx start
 
 #4.2 配置nginx.conf, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
@@ -358,6 +360,7 @@ fi
 
 mv /usr/local/nginx/conf/nginx.conf /usr/local/nginx/conf/nginx.conf.bak
 cat >  /usr/local/nginx/conf/nginx.conf << EOF
+user  www;
 worker_processes  auto;
 
 error_log  /usr/local/nginx/logs/error.log warn;
@@ -486,6 +489,7 @@ EOF
 
 #6.2 更新Nginx的tls配置
 cat >  /usr/local/nginx/conf/nginx.conf << EOF
+user  www;
 worker_processes  auto;
 
 error_log  /usr/local/nginx/logs/error.log warn;
