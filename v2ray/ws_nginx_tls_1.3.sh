@@ -166,8 +166,29 @@ make && make install
 #快捷方式
 ln -s /usr/local/nginx/sbin/nginx /usr/sbin/nginx
 
+#Nginx注册服务(注意：Ubuntu的systemd路径与centos不一致)
+cat > /etc/systemd/system/nginx.service << EOF
+[Unit]
+Description=Nginx - high performance web server
+Documentation=http://nginx.org/en/docs/
+After=network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=forking
+PIDFile=/var/run/nginx.pid
+ExecStartPre=/usr/local/nginx/sbin/nginx -t -c /usr/local/nginx/conf/nginx.conf
+ExecStart=/usr/local/nginx/sbin/nginx -c /usr/local/nginx/conf/nginx.conf
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s QUIT $MAINPID
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+
 # 启动nginx
-nginx
+systemctl start nginx
 
 #4.2 配置nginx.conf, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
@@ -219,7 +240,7 @@ http {
 EOF
 
 #5. 重启
-nginx -s stop && nginx
+systemctl restart nginx
 
 #6. 安装acme.sh 自动更新tls证书
 curl  https://get.acme.sh | sh
@@ -235,7 +256,7 @@ mkdir -p /usr/local/nginx/ssl
 /root/.acme.sh/acme.sh --installcert -d ${PROXY_DOMAIN} \
 --key-file ${PROXY_DOMAIN_KEY_FILE} \
 --fullchain-file ${PROXY_DOMAIN_CERT_FILE} \
---reloadcmd "nginx -s stop && nginx"
+--reloadcmd "systemctl restart nginx"
 
 #6.4 自动更新证书
 /root/.acme.sh/acme.sh  --upgrade  --auto-upgrade
@@ -451,7 +472,7 @@ cat > /etc/v2ray/config.json.client << EOF
 EOF
 
 #6.4 重启nginx and v2ray
-nginx -s stop && nginx
+systemctl restart nginx
 systemctl restart v2ray
 
 #7. 优化
@@ -513,6 +534,6 @@ sysctl --system
 
 #7.2 增加文件描述符限制, <所有用户> <软限制和硬限制> <文件描述符> <整型数值>
 mkdir -p /etc/security/limits.d
-echo "* - nofile 51200" > /etc/security/limits.d/default.conf;
+echo "* - nofile 65535" > /etc/security/limits.d/default.conf;
 
 echo "conguatulations. install finished, please copy the config file to your local machine.";
