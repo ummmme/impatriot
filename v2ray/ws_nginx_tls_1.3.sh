@@ -149,6 +149,7 @@ cd nginx-1.17.2
 ./configure --user=www \
 --group=www \
 --prefix=/usr/local/nginx \
+--pid-path=/var/run/nginx.pid \
 --with-openssl=/usr/local/openssl-1.1.1c \
 --with-openssl-opt='enable-tls1_3' \
 --with-http_v2_module \
