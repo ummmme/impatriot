@@ -93,6 +93,7 @@ V2RAY_PATH=`randStr`;
 #fi
 
 #1. 基础配置 ：
+apt update
 
 #1.0  机器名，时区
 #echo ${HOST_NAME} > /etc/hostname && hostname ${HOST_NAME}
