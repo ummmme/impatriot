@@ -337,7 +337,6 @@ http {
     server {
         listen 443 ssl default_server;
 
-        ssl on;
         ssl_certificate       ${PROXY_DOMAIN_CERT_FILE};
         ssl_certificate_key   ${PROXY_DOMAIN_KEY_FILE};
         ssl_protocols         TLSv1.3;
@@ -456,7 +455,7 @@ systemctl restart v2ray
 #7. 优化
 cat > /etc/sysctl.d/default.conf << EOF
 # 最大打开文件
-fs.file-max = 51200
+fs.file-max = 65535
 # 最大读取缓冲区
 net.core.rmem_max = 67108864
 # 最大写入缓冲区
