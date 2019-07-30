@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # VPS一键安装V2ray脚本(使用TLS1.3，优化TLS1.2上的安全性问题)
 #0. 前言：必须先在dns服务商将二级域名指向新开的服务器，再在服务器上执行本脚本
-#1. 更新系统
+#1. 更新系统(Ubuntu18.04，Debian10 测试通过)
 #2. 安装Nginx
 #3. 申请证书：acme.sh
 #4. 安装V2ray, 配置生成：https://www.veekxt.com/utils/v2ray_gen
@@ -87,14 +87,12 @@ V2RAY_PATH=`randStr`;
 
 #0. 验证：
 #0.1 系统
-if [[ 'ubuntu' != "$(cat /etc/os-release | grep -w ID | awk -F '=' '{print $2}')" ]]; then
-    echo "System Not UBuntu, exit";
-    exit 1;
-fi
+#if [[ 'ubuntu' != "$(cat /etc/os-release | grep -w ID | awk -F '=' '{print $2}')" ]]; then
+#    echo "System Not UBuntu, exit";
+#    exit 1;
+#fi
 
 #1. 基础配置 ：
-apt update
-apt -y upgrade
 
 #1.0  机器名，时区
 #echo ${HOST_NAME} > /etc/hostname && hostname ${HOST_NAME}
@@ -150,7 +148,6 @@ cd nginx-1.17.2
 ./configure --user=www \
 --group=www \
 --prefix=/usr/local/nginx \
---sbin-path=/usr/sbin/nginx \
 --with-openssl=/usr/local/openssl-1.1.1c \
 --with-openssl-opt='enable-tls1_3' \
 --with-http_v2_module \
@@ -164,150 +161,11 @@ cd nginx-1.17.2
 #安装
 make && make install
 
-#创建快捷命令
-cat > /etc/init.d/nginx << EOF
-#!/bin/sh
-### BEGIN INIT INFO
-# Provides:          nginx
-# Required-Start:    \$network \$remote_fs \$local_fs
-# Required-Stop:     \$network \$remote_fs \$local_fs
-# Default-Start:     2 3 4 5
-# Default-Stop:      0 1 6
-# Short-Description: Stop/start nginx
-### END INIT INFO
+#快捷方式
+ln -s /usr/local/nginx/sbin/nginx /usr/sbin/nginx
 
-# Author: Sergey Budnevitch <sb@nginx.com>
-
-PATH=/sbin:/usr/sbin:/bin:/usr/bin
-
-DESC="nginx"
-NAME="nginx"
-CONFFILE="/usr/local/nginx/conf/nginx.conf"
-DAEMON="/usr/local/nginx/sbin/nginx"
-PIDFILE="/var/run/nginx.pid"
-CHECKSLEEP=\${CHECKSLEEP:-3}
-
-[ -x \$DAEMON ] || exit 0
-
-DAEMON_ARGS="-c \$CONFFILE \$DAEMON_ARGS"
-
-. /lib/init/vars.sh
-
-. /lib/lsb/init-functions
-
-do_start()
-{
-    start-stop-daemon --start --quiet --pidfile \$PIDFILE --exec \$DAEMON -- \
-        \$DAEMON_ARGS
-    RETVAL="\$?"
-    return "\$RETVAL"
-}
-
-do_stop()
-{
-    # Return
-    #   0 if daemon has been stopped
-    #   1 if daemon was already stopped
-    #   2 if daemon could not be stopped
-    #   other if a failure occurred
-    start-stop-daemon --stop --quiet --oknodo --retry=TERM/30/KILL/5 --pidfile \$PIDFILE
-    RETVAL="\$?"
-    rm -f \$PIDFILE
-    return "\$RETVAL"
-}
-
-do_reload() {
-    #
-    start-stop-daemon --stop --signal HUP --quiet --pidfile \$PIDFILE
-    RETVAL="\$?"
-    return "\$RETVAL"
-}
-
-do_configtest() {
-    if [ "\$#" -ne 0 ]; then
-        case "\$1" in
-            -q)
-                FLAG=\$1
-                ;;
-            *)
-                ;;
-        esac
-        shift
-    fi
-    \$DAEMON -t \$FLAG -c \$CONFFILE
-    RETVAL="\$?"
-    return \$RETVAL
-}
-
-do_checkreload() {
-    templog=`/bin/mktemp --tmpdir nginx-check-reload-XXXXXX.log`
-    trap '/bin/rm -f \$templog' 0
-    /usr/bin/tail --pid=\$\$ -n 0 --follow=name /usr/local/nginx/logs/error.log > \$templog &
-    /bin/sleep 1
-    start-stop-daemon --stop --signal HUP --quiet --pidfile \$PIDFILE
-    /bin/sleep \$CHECKSLEEP
-    /bin/grep -E "\[emerg\]|\[alert\]" \$templog
-}
-
-case "\$1" in
-    start)
-        [ "\$VERBOSE" != no ] && log_daemon_msg "Starting \$DESC " "\$NAME"
-        do_start
-        case "\$?" in
-            0|1) [ "\$VERBOSE" != no ] && log_end_msg 0 ;;
-            2) [ "\$VERBOSE" != no ] && log_end_msg 1 ;;
-        esac
-        ;;
-    stop)
-        [ "\$VERBOSE" != no ] && log_daemon_msg "Stopping \$DESC" "\$NAME"
-        do_stop
-        case "\$?" in
-            0|1) [ "\$VERBOSE" != no ] && log_end_msg 0 ;;
-            2) [ "\$VERBOSE" != no ] && log_end_msg 1 ;;
-        esac
-        ;;
-  status)
-        status_of_proc -p "\$PIDFILE" "\$DAEMON" "\$NAME" && exit 0 || exit \$?
-        ;;
-  configtest)
-        do_configtest
-        ;;
-  reload|force-reload)
-        log_daemon_msg "Reloading \$DESC" "\$NAME"
-        do_reload
-        log_end_msg \$?
-        ;;
-  restart|force-reload)
-        log_daemon_msg "Restarting \$DESC" "\$NAME"
-        do_configtest -q || exit \$RETVAL
-        do_stop
-        case "\$?" in
-            0|1)
-                do_start
-                case "\$?" in
-                    0) log_end_msg 0 ;;
-                    1) log_end_msg 1 ;; # Old process is still running
-                    *) log_end_msg 1 ;; # Failed to start
-                esac
-                ;;
-            *)
-                # Failed to stop
-                log_end_msg 1
-                ;;
-        esac
-        ;;
-    *)
-        echo "Usage: /etc/init.d/nginx {start|stop|status|restart|reload|force-reload|configtest}" >&2
-        exit 3
-        ;;
-esac
-
-exit \$RETVAL
-EOF
-chmod a+x /etc/init.d/nginx
-
-# 启动
-/etc/init.d/nginx start
+# 启动nginx
+nginx
 
 #4.2 配置nginx.conf, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
@@ -359,7 +217,7 @@ http {
 EOF
 
 #5. 重启
-/etc/init.d/nginx restart
+nginx -s stop && nginx
 
 #6. 安装acme.sh 自动更新tls证书
 curl  https://get.acme.sh | sh
@@ -375,7 +233,7 @@ mkdir -p /usr/local/nginx/ssl
 /root/.acme.sh/acme.sh --installcert -d ${PROXY_DOMAIN} \
 --key-file ${PROXY_DOMAIN_KEY_FILE} \
 --fullchain-file ${PROXY_DOMAIN_CERT_FILE} \
---reloadcmd "/etc/init.d/nginx force-reload"
+--reloadcmd "nginx -s stop && nginx"
 
 #6.4 自动更新证书
 /root/.acme.sh/acme.sh  --upgrade  --auto-upgrade
@@ -592,7 +450,7 @@ cat > /etc/v2ray/config.json.client << EOF
 EOF
 
 #6.4 重启nginx and v2ray
-/etc/init.d/nginx restart
+nginx -s stop && nginx
 systemctl restart v2ray
 
 #7. 优化
