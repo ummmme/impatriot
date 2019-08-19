@@ -6,7 +6,10 @@
 #3. 申请证书：acme.sh
 #4. 安装V2ray, 配置生成：https://www.veekxt.com/utils/v2ray_gen
 #5. 安装完成后，将服务器上的/etc/v2ray/config.json.client 文件复制到本地的/etc/v2ray 文件夹下，并重命名为config.json后，重启本地v2ray即可
-#Date: 2019-07-24
+#Date: 2019-08-19 更新Nginx版本为1.17.3
+
+
+NGINX_VERSION="1.17.3"
 
 
 #说明
@@ -141,9 +144,9 @@ wget https://www.openssl.org/source/openssl-1.1.1c.tar.gz
 tar zxvf openssl-1.1.1c.tar.gz && rm openssl-1.1.1c.tar.gz
 
 #4.1.3 下载nginx
-wget https://nginx.org/download/nginx-1.17.2.tar.gz
-tar zxvf nginx-1.17.2.tar.gz && rm nginx-1.17.2.tar.gz
-cd nginx-1.17.2
+wget https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz
+tar zxvf nginx-${NGINX_VERSION}.tar.gz && rm nginx-${NGINX_VERSION}.tar.gz
+cd nginx-${NGINX_VERSION}
 
 #编译
 ./configure --user=www \
