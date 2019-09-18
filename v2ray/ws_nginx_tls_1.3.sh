@@ -11,7 +11,6 @@
 
 NGINX_VERSION="1.17.3"
 
-
 #说明
 showUsage() {
 cat 1>&2 <<EOF
@@ -62,6 +61,12 @@ do
         *) showUsage; break ;;
     esac
 done
+
+#安装必要的组件
+sudo apt-get install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils
+
+#For CentOS : yum install bind-utils
+
 
 #判断参数有效性:
 if [[ -z "${PROXY_DOMAIN}" ]]; then
@@ -137,7 +142,6 @@ groupadd www # 添加组
 useradd -s /sbin/nologin -g www www #添加用户
 
 cd /usr/local
-sudo apt-get install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git
 
 #4.1.2 安装openssl
 wget https://www.openssl.org/source/openssl-1.1.1c.tar.gz
@@ -181,8 +185,8 @@ Type=forking
 PIDFile=/var/run/nginx.pid
 ExecStartPre=/usr/local/nginx/sbin/nginx -t -c /usr/local/nginx/conf/nginx.conf
 ExecStart=/usr/local/nginx/sbin/nginx -c /usr/local/nginx/conf/nginx.conf
-ExecReload=/bin/kill -s HUP $MAINPID
-ExecStop=/bin/kill -s QUIT $MAINPID
+ExecReload=/bin/kill -s HUP ${MAINPID}
+ExecStop=/bin/kill -s QUIT ${MAINPID}
 PrivateTmp=true
 
 [Install]
@@ -330,7 +334,7 @@ cat > /etc/v2ray/config.json << EOF
 EOF
 
 
-#6.2 更新Nginx的tls配置
+#6.2 更新Nginx的websocket + tls1.3 配置
 cat >  /usr/local/nginx/conf/nginx.conf << EOF
 user  www;
 worker_processes  auto;
@@ -539,4 +543,4 @@ sysctl --system
 mkdir -p /etc/security/limits.d
 echo "* - nofile 65535" > /etc/security/limits.d/default.conf;
 
-echo "conguatulations. install finished, please copy the config file to your local machine.";
+echo "Conguatulations. install finished, please copy the file '/etc/v2ray/config.json.client' to your local machine.";
