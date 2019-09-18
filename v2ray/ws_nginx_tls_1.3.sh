@@ -63,7 +63,7 @@ do
 done
 
 #安装必要的组件
-sudo apt-get install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils
+sudo apt-get install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils curl
 
 #For CentOS : yum install bind-utils
 
