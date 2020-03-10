@@ -8,8 +8,10 @@
 #5. 安装完成后，将服务器上的/etc/v2ray/config.json.client 文件复制到本地的/etc/v2ray 文件夹下，并重命名为config.json后，重启本地v2ray即可
 #2019-08-19 更新Nginx版本为1.17.3
 #2019-09-24 更新脚本安装方式，修复nginx 重启的bug
+#2020-03-05 更新openssl版本为1.1.1d
 
 NGINX_VERSION="1.17.3"
+OPENSSL_VERSION="1.1.1d"
 
 #说明
 showUsage() {
@@ -133,8 +135,8 @@ useradd -s /sbin/nologin -g www www #添加用户
 cd /usr/local
 
 #4.1.2 安装openssl
-wget https://www.openssl.org/source/openssl-1.1.1c.tar.gz
-tar zxvf openssl-1.1.1c.tar.gz && rm openssl-1.1.1c.tar.gz
+wget https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
+tar zxvf openssl-${OPENSSL_VERSION}.tar.gz && rm openssl-${OPENSSL_VERSION}.tar.gz
 
 #4.1.3 下载nginx
 wget https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz
@@ -146,7 +148,7 @@ cd nginx-${NGINX_VERSION}
 --group=www \
 --prefix=/usr/local/nginx \
 --pid-path=/var/run/nginx.pid \
---with-openssl=/usr/local/openssl-1.1.1c \
+--with-openssl=/usr/local/openssl-${OPENSSL_VERSION} \
 --with-openssl-opt='enable-tls1_3' \
 --with-http_v2_module \
 --with-http_ssl_module \
