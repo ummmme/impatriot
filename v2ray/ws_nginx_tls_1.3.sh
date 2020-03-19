@@ -9,6 +9,8 @@
 #2019-08-19 更新Nginx版本为1.17.3
 #2019-09-24 更新脚本安装方式，修复nginx 重启的bug
 #2020-03-05 更新openssl版本为1.1.1d
+#2020-03-19 修复使用Quick Start一键安装命令时，伪装首页无效的问题
+
 
 NGINX_VERSION="1.17.3"
 OPENSSL_VERSION="1.1.1d"
@@ -25,14 +27,6 @@ EOF
 
 printr() {
     echo; echo "## $1"; echo;
-}
-
-printSuccess() {
-    echo; echo -e "\033[92m $1 \033[0m"; echo;
-}
-
-printError() {
-    echo; echo -e "\033[91m $1 \033[0m"; echo;
 }
 
 # 生成随机数字
@@ -53,7 +47,7 @@ randStr() {
 # 输入域名，开始安装
 clear
 showUsage;
-read -p "$(echo -e "enter your domain:")" PROXY_DOMAIN;
+read -p "$(echo "请输入您的域名，确保已经指向当前服务器：")" PROXY_DOMAIN;
 
 #安装必要的组件
 sudo apt-get update
@@ -75,6 +69,11 @@ if [[ "${CURRENT_IP}" != "${DOMAIN_IP}" ]]; then
     printr "[ERROR]:  the domain: ${PROXY_DOMAIN} didn't point to current server.";
     exit 1;
 fi
+
+
+SHELL_DIR=`dirname $0`
+PROJECT_HOME=`cd ${SHELL_DIR}/..;pwd`
+
 
 #请勿修改以下配置-------------------------------------------
 #配置三级域名来转发v2ray流量，不要用二级域名
@@ -190,10 +189,10 @@ systemctl start nginx
 
 #4.2 配置nginx.conf, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
-if [[ ! -f "/usr/local/impatriot/404/404.html" ]]; then
-echo "hello" > /export/www/${PROXY_DOMAIN}/index.html
+if [[ ! -f "${PROJECT_HOME}/404/404.html" ]]; then
+curl -f -L -sS https://raw.githubusercontent.com/abcfyk/impatriot/master/404/404.html > /export/www/${PROXY_DOMAIN}/index.html
 else
-cp /usr/local/impatriot/404/404.html /export/www/${PROXY_DOMAIN}/index.html
+cp ${PROJECT_HOME}/404/404.html /export/www/${PROXY_DOMAIN}/index.html
 fi
 
 mv /usr/local/nginx/conf/nginx.conf /usr/local/nginx/conf/nginx.conf.bak
