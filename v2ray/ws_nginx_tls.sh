@@ -49,7 +49,7 @@ read -p "$(echo "请输入您的域名，确保已经指向当前服务器：")"
 #判断域名有效性(兼容GCP等使用弹性IP的云服务器，只需要获取公网出口的IP地址即可，忽略代理层)
 PUBLIC_IP=$(curl ifconfig.me);
 CURRENT_IP=$(ifconfig -a | grep inet | grep -v "127.0.0.1\|inet6\|0.0.0.0" | awk '{print $2}' | tr -d "addr:");
-DOMAIN_IP=$(nslookup ${PROXY_DOMAIN} 8.8.8.8 | grep -v "8.8.8.8\|127.0.0.53" | grep "Address:"  | awk '{print $2}');
+DOMAIN_IP=$(ping -c 1 ${DOMAIN_IP} | sed -n "1p" | awk -F '(' '{print $2}'| awk -F ')' '{print $1}');
 
 if [[ "${CURRENT_IP}" != "${DOMAIN_IP}" ]]; then
     if [[ "${PUBLIC_IP}" != "${DOMAIN_IP}" ]]; then
