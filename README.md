@@ -12,7 +12,7 @@ V2Ray一键安装脚本
 部分VPS测速脚本
 
 
-## Quick Start
+## Quick Start（Recommended）
 ```bash
 bash <(curl -f -L -sS https://raw.githubusercontent.com/abcfyk/impatriot/master/v2ray/ws_nginx_tls.sh)
 ```
