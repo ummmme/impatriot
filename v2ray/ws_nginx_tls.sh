@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # VPS一键安装V2ray脚本(使用TLS1.3，优化TLS1.2上的安全性问题)
-#0. 前言：必须先在dns服务商将二级域名指向新开的服务器，再在服务器上执行本脚本
-#1. 更新系统(Ubuntu18.04，19.04, Debian10 测试通过)
+#0. 前言：必须先在dns服务商将域名指向新开的服务器，再在服务器上执行本脚本
+#1. 更新系统(Ubuntu18.04,19.04, Debian9,10 测试通过)
 #2. 编译安装Nginx + openssl
 #3. 申请证书：acme.sh
 #4. 安装V2ray
@@ -48,14 +48,11 @@ read -p "$(echo "请输入您的域名，确保已经指向当前服务器：")"
 
 #判断域名有效性(兼容GCP等使用弹性IP的云服务器，只需要获取公网出口的IP地址即可，忽略代理层)
 PUBLIC_IP=$(curl ifconfig.me);
-CURRENT_IP=$(ifconfig -a | grep inet | grep -v "127.0.0.1\|inet6\|0.0.0.0" | awk '{print $2}' | tr -d "addr:");
 DOMAIN_IP=$(ping -c 1 ${DOMAIN_IP} | sed -n "1p" | awk -F '(' '{print $2}'| awk -F ')' '{print $1}');
 
-if [[ "${CURRENT_IP}" != "${DOMAIN_IP}" ]]; then
-    if [[ "${PUBLIC_IP}" != "${DOMAIN_IP}" ]]; then
-        printr "[ERROR]:  域名:${PROXY_DOMAIN} 没有指向当前服务器，请检查后重试";
-        exit 1;
-    fi
+if [[ "${PUBLIC_IP}" != "${DOMAIN_IP}" ]]; then
+    printr "[ERROR]:  域名:${PROXY_DOMAIN} 没有指向当前服务器，请检查后重试";
+    exit 1;
 fi
 
 #准备Nginx与Openssl的安装文件(暂不做签名比对)
