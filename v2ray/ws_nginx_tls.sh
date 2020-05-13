@@ -48,7 +48,7 @@ read -p "$(echo "请输入您的域名，确保已经指向当前服务器：")"
 
 #判断域名有效性(兼容GCP等使用弹性IP的云服务器，只需要获取公网出口的IP地址即可，忽略代理层)
 PUBLIC_IP=$(curl ifconfig.me);
-DOMAIN_IP=$(ping -c 1 ${DOMAIN_IP} | sed -n "1p" | awk -F '(' '{print $2}'| awk -F ')' '{print $1}');
+DOMAIN_IP=$(ping -c 1 ${PROXY_DOMAIN} | sed -n "1p" | awk -F '(' '{print $2}'| awk -F ')' '{print $1}');
 
 if [[ "${PUBLIC_IP}" != "${DOMAIN_IP}" ]]; then
     printr "[ERROR]:  域名:${PROXY_DOMAIN} 没有指向当前服务器，请检查后重试";
