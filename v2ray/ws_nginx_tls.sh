@@ -5,13 +5,12 @@
 #2. 编译安装Nginx + openssl
 #3. 申请证书：acme.sh
 #4. 安装V2ray
-#5. 安装完成后，将服务器上的/etc/v2ray/config.json.client 文件复制到本地的/etc/v2ray 文件夹下，并重命名为config.json后，重启本地v2ray即可
-#2020-03-19 修复使用Quick Start一键安装命令时，伪装首页无效的问题
-#2020-04-09 更新openssl版本为1.1.1f，优化兼容GCP等云服务器  
+#5. 安装完成后，将服务器上的/etc/v2ray/config.json.$PROXY_DOMAIN 文件复制到本地的/etc/v2ray 文件夹下，并重命名为config.json后，重启本地v2ray即可
+#2020-08-07 更新nginx版本为1.19.1，更新openssl版本为1.1.1g，优化安装后的客户端配置和提示信息
 
 
-NGINX_VERSION="1.17.9"
-OPENSSL_VERSION="1.1.1f"
+NGINX_VERSION="1.19.1"
+OPENSSL_VERSION="1.1.1g"
 
 #说明
 showUsage() {
@@ -22,6 +21,15 @@ v2ray 一键安装脚本，自动安装v2ray, nginx, 自动申请证书，自动
 *-----------------------------------------------------------------------
 EOF
 }
+
+showFinishInfo() {
+cat 1>&2 <<EOF
+*-----------------------------------------------------------------------
+v2ray 已经安装并配置完毕，请将生成的配置文件：/etc/v2ray/config.json.$1 下载至本地导入到客户端使用
+*-----------------------------------------------------------------------
+EOF
+}
+
 
 printr() {
     echo; echo "## $1"; echo;
@@ -256,7 +264,7 @@ mkdir -p /usr/local/nginx/ssl
 #6.4 自动更新证书
 /root/.acme.sh/acme.sh  --upgrade  --auto-upgrade
 
-#7. 安装V2ray veekxt.com
+#7. 安装V2ray
 curl -L -s https://install.direct/go.sh | bash;
 mv /etc/v2ray/config.json /etc/v2ray/config.json.bak
 cat > /etc/v2ray/config.json << EOF
@@ -391,8 +399,8 @@ http {
 EOF
 
 
-#6.3 客户端配置(复制到本地)
-cat > /etc/v2ray/config.json.client << EOF
+#6.3 生成客户端配置(复制到本地)
+cat > /etc/v2ray/config.json.${PROXY_DOMAIN} << EOF
 {
   "log":{},
   "dns":{},
@@ -537,4 +545,5 @@ sysctl --system
 mkdir -p /etc/security/limits.d
 echo "* - nofile 65535" > /etc/security/limits.d/default.conf;
 
-echo "Conguatulations. install finished, please copy the file '/etc/v2ray/config.json.client' to your local machine.";
+
+showFinishInfo ${PROXY_DOMAIN};
