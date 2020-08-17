@@ -11,6 +11,10 @@ V2Ray一键安装脚本
 ### speedtest
 部分VPS测速脚本
 
+## Requirements
+```bash
+apt install -y curl
+```
 
 ## Quick Start（Recommended）
 ```bash
