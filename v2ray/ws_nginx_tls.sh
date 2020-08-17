@@ -6,7 +6,12 @@
 #3. 申请证书：acme.sh
 #4. 安装V2ray
 #5. 安装完成后，将服务器上的/etc/v2ray/config.json.$PROXY_DOMAIN 文件复制到本地的/etc/v2ray 文件夹下，并重命名为config.json后，重启本地v2ray即可
-#2020-08-07 更新nginx版本为1.19.1，更新openssl版本为1.1.1g，优化安装后的客户端配置和提示信息
+#2020-08-17 更新v2fly版本的v2ray-core
+
+#------------------------------------------------------------------
+#自定义区域：可手动选择404页面的模板序号，默认为2
+404_PAGE_INDEX=2
+#------------------------------------------------------------------
 
 
 NGINX_VERSION="1.19.1"
@@ -195,8 +200,9 @@ systemctl start nginx
 
 #4.2 配置nginx.conf, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
-if [[ ! -f "${PROJECT_HOME}/404/404.html" ]]; then
-    curl -f -L -sS https://raw.githubusercontent.com/abcfyk/impatriot/master/404/404.html > /export/www/${PROXY_DOMAIN}/index.html
+if [[ ! -f "${PROJECT_HOME}/404/${404_PAGE_INDEX}.html" ]]; then
+    curl -f -L -sS https://raw.githubusercontent.com/abcfyk/impatriot/master/404/${404_PAGE_INDEX}.html > /export/www/${PROXY_DOMAIN}/index.html
+    sed -i "s/domainName/$PROXY_DOMAIN/g" /export/www/${PROXY_DOMAIN}/index.html
 else
     cp ${PROJECT_HOME}/404/404.html /export/www/${PROXY_DOMAIN}/index.html
 fi
@@ -263,6 +269,10 @@ mkdir -p /usr/local/nginx/ssl
 
 #6.4 自动更新证书
 /root/.acme.sh/acme.sh  --upgrade  --auto-upgrade
+
+
+#TODO：更新v2ray 安装方式---------------------------------------------------------------
+
 
 #7. 安装V2ray
 curl -L -s https://install.direct/go.sh | bash;
