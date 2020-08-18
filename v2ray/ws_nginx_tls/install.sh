@@ -83,9 +83,6 @@ fi
 #-----------------------------------------------------------------------------------------------------------------------
 # 请勿修改以下配置
 #-----------------------------------------------------------------------------------------------------------------------
-SHELL_DIR=`dirname $0`
-PROJECT_HOME=`cd ${SHELL_DIR}/..;pwd`
-
 #安装必要的组件
 sudo apt install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim
 
@@ -140,7 +137,7 @@ sysctl -p
 sysctl net.ipv4.tcp_available_congestion_control
 
 #4. 编译安装Nginx，开启tls1.3支持
-cd /usr/local
+cd /usr/local || exit 1;
 
 #4.1.1 安装依赖
 groupadd www # 添加组
@@ -151,7 +148,7 @@ tar zxvf openssl-${OPENSSL_VERSION}.tar.gz && rm openssl-${OPENSSL_VERSION}.tar.
 
 #4.1.3 下载nginx
 tar zxvf nginx-${NGINX_VERSION}.tar.gz && rm nginx-${NGINX_VERSION}.tar.gz
-cd nginx-${NGINX_VERSION}
+cd nginx-${NGINX_VERSION} || exit 1;
 
 #编译
 ./configure --user=www \
