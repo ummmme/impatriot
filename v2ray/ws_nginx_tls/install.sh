@@ -5,7 +5,7 @@
 #2. 编译安装Nginx + openssl
 #3. 申请证书：acme.sh
 #4. 安装V2ray
-#5. 安装完成后，将UUID，域名，
+#5. 安装完成后，将生成的客户端配置下载到本地导入GUI工具即可
 #2020-08-17 更新v2ray安装脚本，支持4.27.0+
 
 #------------------------------------------------------------------
@@ -86,8 +86,7 @@ SHELL_DIR=`dirname $0`
 PROJECT_HOME=`cd ${SHELL_DIR}/..;pwd`
 
 #安装必要的组件
-sudo apt-get update
-sudo apt-get install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils curl
+sudo apt install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils curl
 
 #配置三级域名来转发v2ray流量，不要用二级域名
 PROXY_DOMAIN_CERT_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.fullchain.cer"
@@ -271,7 +270,7 @@ mkdir -p /usr/local/nginx/ssl
 /root/.acme.sh/acme.sh  --upgrade  --auto-upgrade
 
 
-#TODO：更新v2ray 安装方式---------------------------------------------------------------
+#更新v2ray 安装方式---------------------------------------------------------------
 #7.1 安装V2ray（新）
 curl -L -s https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh | bash;
 
