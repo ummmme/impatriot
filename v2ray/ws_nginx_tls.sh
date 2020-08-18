@@ -5,8 +5,8 @@
 #2. 编译安装Nginx + openssl
 #3. 申请证书：acme.sh
 #4. 安装V2ray
-#5. 安装完成后，将服务器上的/etc/v2ray/config.json.$PROXY_DOMAIN 文件复制到本地的/etc/v2ray 文件夹下，并重命名为config.json后，重启本地v2ray即可
-#2020-08-17 更新v2fly版本的v2ray-core
+#5. 安装完成后，将UUID，域名，
+#2020-08-17 更新v2ray安装脚本，支持4.27.0+
 
 #------------------------------------------------------------------
 #自定义区域：可手动选择404页面的模板序号，默认为2
@@ -273,10 +273,12 @@ mkdir -p /usr/local/nginx/ssl
 
 #TODO：更新v2ray 安装方式---------------------------------------------------------------
 
+printr "安装v2ray中，安装完毕后请手动配置"
+curl -L -s https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh | bash;
+
 
 #7. 安装V2ray
-curl -L -s https://install.direct/go.sh | bash;
-mv /etc/v2ray/config.json /etc/v2ray/config.json.bak
+#curl -L -s https://install.direct/go.sh | bash;
 cat > /etc/v2ray/config.json << EOF
 {
   "log": {
