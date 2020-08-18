@@ -11,14 +11,15 @@ V2Ray一键安装脚本
 ### speedtest
 部分VPS测速脚本
 
-## Requirements
+## Preparations & Requirements
 ```bash
+apt update
 apt install -y curl
 ```
 
 ## Quick Start（Recommended）
 ```bash
-bash <(curl -f -L -sS https://raw.githubusercontent.com/abcfyk/impatriot/master/v2ray/ws_nginx_tls.sh)
+bash <(curl -f -L -sS https://raw.githubusercontent.com/abcfyk/impatriot/master/v2ray/ws_nginx_tls/install.sh)
 ```
 
 ## Note

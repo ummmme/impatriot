@@ -198,13 +198,13 @@ EOF
 # 启动nginx
 systemctl start nginx
 
-#4.2 配置nginx.conf, 默认主页为404页面
+#4.2 配置nginx.ws_nginx_tls, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
 if [[ ! -f "${PROJECT_HOME}/404/${404_PAGE_INDEX}.html" ]]; then
     curl -f -L -sS https://raw.githubusercontent.com/abcfyk/impatriot/master/404/${404_PAGE_INDEX}.html > /export/www/${PROXY_DOMAIN}/index.html
-    sed -i "s/domainName/$PROXY_DOMAIN/g" /export/www/${PROXY_DOMAIN}/index.html
+    sed -i "s/domainName/${PROXY_DOMAIN}/g" /export/www/${PROXY_DOMAIN}/index.html
 else
-    cp ${PROJECT_HOME}/404/404.html /export/www/${PROXY_DOMAIN}/index.html
+    cp ${PROJECT_HOME}/404/${404_PAGE_INDEX}.html /export/www/${PROXY_DOMAIN}/index.html
 fi
 
 mv /usr/local/nginx/conf/nginx.conf /usr/local/nginx/conf/nginx.conf.bak
@@ -272,18 +272,14 @@ mkdir -p /usr/local/nginx/ssl
 
 
 #TODO：更新v2ray 安装方式---------------------------------------------------------------
-
-printr "安装v2ray中，安装完毕后请手动配置"
+#7.1 安装V2ray（新）
 curl -L -s https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh | bash;
 
-
-#7. 安装V2ray
-#curl -L -s https://install.direct/go.sh | bash;
+#7.2 生成服务端配置（单配置文件模式）
+mkdir -p /etc/v2ray
 cat > /etc/v2ray/config.json << EOF
 {
   "log": {
-    "access": "/var/log/v2ray/access.log",
-    "error": "/var/log/v2ray/error.log",
     "loglevel": "warning"
   },
   "dns": {},
@@ -342,7 +338,7 @@ cat > /etc/v2ray/config.json << EOF
 EOF
 
 
-#6.2 更新Nginx的websocket + tls1.3 配置
+#7.3 更新Nginx的websocket + tls1.3 配置
 cat >  /usr/local/nginx/conf/nginx.conf << EOF
 user  www;
 worker_processes  auto;
@@ -411,7 +407,7 @@ http {
 EOF
 
 
-#6.3 生成客户端配置(复制到本地)
+#7.4 生成客户端配置(复制到本地)
 cat > /etc/v2ray/config.json.${PROXY_DOMAIN} << EOF
 {
   "log":{},
@@ -492,11 +488,21 @@ cat > /etc/v2ray/config.json.${PROXY_DOMAIN} << EOF
 }
 EOF
 
-#6.4 重启nginx and v2ray
+#7.5 重启nginx
 systemctl restart nginx
-systemctl restart v2ray
 
-#7. 优化
+#7.6 启动v2ray（指定旧版本配置）
+if [[ ! -f "/etc/systemd/system/v2ray.service" ]]; then
+    cp /etc/systemd/system/v2ray.service /etc/systemd/system/v2ray.service.bak
+    sed -i "s^ExecStart=/usr/local/bin/v2ray -confdir /usr/local/etc/v2ray/^ExecStart=/usr/local/bin/v2ray --config=/etc/v2ray/config.json^g" /etc/systemd/system/v2ray.service
+    systemctl start v2ray
+else
+    printr "v2ray.service结构似乎已经变动，无法替换启动命令，使用nohup /usr/local/bin/v2ray --config=/etc/v2ray/config.json &命令启动v2ray"
+    nohup /usr/local/bin/v2ray --config=/etc/v2ray/config.json 2>&1 & >> /dev/null
+fi
+
+
+#8. 优化
 cat > /etc/sysctl.d/default.conf << EOF
 # 最大打开文件
 fs.file-max = 65535
