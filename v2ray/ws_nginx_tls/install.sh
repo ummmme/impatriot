@@ -30,7 +30,8 @@ EOF
 showFinishInfo() {
 cat 1>&2 <<EOF
 *-----------------------------------------------------------------------
-v2ray 已经安装并配置完毕，请将生成的配置文件：/etc/v2ray/config.json.$1 下载至本地导入到客户端使用
+INFO：v2ray 已经安装并配置完毕，请将生成的配置文件：/etc/v2ray/config.json.$1 下载至本地导入到客户端使用
+INFO：服务端v2ray版本为：$2，请注意你的客户端版本是否匹配
 *-----------------------------------------------------------------------
 EOF
 }
@@ -86,7 +87,7 @@ SHELL_DIR=`dirname $0`
 PROJECT_HOME=`cd ${SHELL_DIR}/..;pwd`
 
 #安装必要的组件
-sudo apt install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils curl
+sudo apt install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim
 
 #配置三级域名来转发v2ray流量，不要用二级域名
 PROXY_DOMAIN_CERT_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.fullchain.cer"
@@ -199,12 +200,9 @@ systemctl start nginx
 
 #4.2 配置nginx.ws_nginx_tls, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
-if [[ ! -f "${PROJECT_HOME}/404/${404_PAGE_INDEX}.html" ]]; then
-    curl -f -L -sS https://raw.githubusercontent.com/abcfyk/impatriot/master/404/${404_PAGE_INDEX}.html > /export/www/${PROXY_DOMAIN}/index.html
-    sed -i "s/domainName/${PROXY_DOMAIN}/g" /export/www/${PROXY_DOMAIN}/index.html
-else
-    cp ${PROJECT_HOME}/404/${404_PAGE_INDEX}.html /export/www/${PROXY_DOMAIN}/index.html
-fi
+curl -f -L -sS https://raw.githubusercontent.com/abcfyk/impatriot/master/404/${404_PAGE_INDEX}.html > /export/www/${PROXY_DOMAIN}/index.html
+sed -i "s/domainName/${PROXY_DOMAIN}/g" /export/www/${PROXY_DOMAIN}/index.html
+chmod -R 777 /export/www/${PROXY_DOMAIN}
 
 mv /usr/local/nginx/conf/nginx.conf /usr/local/nginx/conf/nginx.conf.bak
 cat >  /usr/local/nginx/conf/nginx.conf << EOF
@@ -385,7 +383,7 @@ http {
         ssl_session_timeout 60m;
 
         root /export/www/${PROXY_DOMAIN};
-        index index.html;
+        index index.htm index.html;
         server_name ${PROXY_DOMAIN};
         location / {
             try_files \$uri \$uri/ =404;
@@ -491,13 +489,24 @@ EOF
 systemctl restart nginx
 
 #7.6 启动v2ray（指定旧版本配置）
-if [[ ! -f "/etc/systemd/system/v2ray.service" ]]; then
+if [[ -f "/etc/systemd/system/v2ray.service" ]]; then
     cp /etc/systemd/system/v2ray.service /etc/systemd/system/v2ray.service.bak
     sed -i "s^ExecStart=/usr/local/bin/v2ray -confdir /usr/local/etc/v2ray/^ExecStart=/usr/local/bin/v2ray --config=/etc/v2ray/config.json^g" /etc/systemd/system/v2ray.service
+    systemctl enable v2ray
+    systemctl daemon-reload
     systemctl start v2ray
 else
     printr "v2ray.service结构似乎已经变动，无法替换启动命令，使用nohup /usr/local/bin/v2ray --config=/etc/v2ray/config.json &命令启动v2ray"
     nohup /usr/local/bin/v2ray --config=/etc/v2ray/config.json 2>&1 & >> /dev/null
+fi
+
+#7.7 首次启动检测
+if [ ! `ps aux| grep v2ray|grep -v 'grep'|awk '{print $12}'` = "--config=/etc/v2ray/config.json" ]; then
+    printr "v2ray启动失败，参考日志：";
+    journalctl -u v2ray;
+    exit 1;
+else
+    printr "v2ray启动成功";
 fi
 
 
@@ -562,5 +571,5 @@ sysctl --system
 mkdir -p /etc/security/limits.d
 echo "* - nofile 65535" > /etc/security/limits.d/default.conf;
 
-
-showFinishInfo ${PROXY_DOMAIN};
+V_VERSION=`/usr/local/bin/v2ray -version  | grep V2Ray  |   awk '{print  $2}'`;
+showFinishInfo ${PROXY_DOMAIN} ${V_VERSION};
