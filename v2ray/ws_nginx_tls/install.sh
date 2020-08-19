@@ -10,7 +10,7 @@
 
 #------------------------------------------------------------------
 #自定义区域：可手动选择404页面的模板序号，默认为2
-404_PAGE_INDEX=2
+FRONTPAGE_INDEX=2
 #------------------------------------------------------------------
 
 
@@ -31,7 +31,7 @@ showFinishInfo() {
 cat 1>&2 <<EOF
 *-----------------------------------------------------------------------
 INFO：v2ray 已经安装并配置完毕，请将生成的配置文件：/etc/v2ray/config.json.$1 下载至本地导入到客户端使用
-INFO：服务端v2ray版本为：$2，请注意你的客户端版本是否匹配
+INFO：服务端v2ray版本为：$2，请注意客户端版本是否匹配
 *-----------------------------------------------------------------------
 EOF
 }
@@ -197,7 +197,7 @@ systemctl start nginx
 
 #4.2 配置nginx.ws_nginx_tls, 默认主页为404页面
 mkdir -p /export/www/${PROXY_DOMAIN}
-curl -f -L -sS https://raw.githubusercontent.com/abcfyk/impatriot/master/404/${404_PAGE_INDEX}.html > /export/www/${PROXY_DOMAIN}/index.html
+curl -f -L -sS https://raw.githubusercontent.com/abcfyk/impatriot/master/404/${FRONTPAGE_INDEX}.html > /export/www/${PROXY_DOMAIN}/index.html
 sed -i "s/domainName/${PROXY_DOMAIN}/g" /export/www/${PROXY_DOMAIN}/index.html
 chmod -R 777 /export/www/${PROXY_DOMAIN}
 
