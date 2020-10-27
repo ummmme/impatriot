@@ -271,7 +271,7 @@ curl -L -s https://raw.githubusercontent.com/abcfyk/fhs-install-v2ray/master/ins
 
 #7.2 生成服务端配置（单配置文件模式）
 mkdir -p /etc/v2ray
-cat > /etc/v2ray/config.json << EOF
+cat > /usr/local/etc/v2ray/config.json << EOF
 {
   "log": {
     "loglevel": "warning"
@@ -402,7 +402,7 @@ EOF
 
 
 #7.4 生成客户端配置(复制到本地)
-cat > /etc/v2ray/config.json.${PROXY_DOMAIN} << EOF
+cat > /usr/local/etc/v2ray/config.json.${PROXY_DOMAIN} << EOF
 {
   "log":{},
   "dns":{},
@@ -485,20 +485,20 @@ EOF
 #7.5 重启nginx
 systemctl restart nginx
 
-#7.6 启动v2ray（指定旧版本配置）
+#7.6 启动v2ray（指定单配置文件模式）
 if [[ -f "/etc/systemd/system/v2ray.service" ]]; then
     cp /etc/systemd/system/v2ray.service /etc/systemd/system/v2ray.service.bak
-    sed -i "s^ExecStart=/usr/local/bin/v2ray -confdir /usr/local/etc/v2ray/^ExecStart=/usr/local/bin/v2ray --config=/etc/v2ray/config.json^g" /etc/systemd/system/v2ray.service
+#     sed -i "s^ExecStart=/usr/local/bin/v2ray -confdir /usr/local/etc/v2ray/^ExecStart=/usr/local/bin/v2ray --config=/usr/local/etc/v2ray/config.json^g" /etc/systemd/system/v2ray.service
     systemctl enable v2ray
     systemctl daemon-reload
     systemctl start v2ray
 else
-    printr "v2ray.service结构似乎已经变动，无法替换启动命令，使用nohup /usr/local/bin/v2ray --config=/etc/v2ray/config.json &命令启动v2ray"
-    nohup /usr/local/bin/v2ray --config=/etc/v2ray/config.json 2>&1 & >> /dev/null
+    printr "v2ray.service结构似乎已经变动，无法替换启动命令，使用nohup /usr/local/bin/v2ray --config=/usr/local/etc/v2ray/config.json &命令启动v2ray"
+    nohup /usr/local/bin/v2ray --config=/usr/local/etc/v2ray/config.json 2>&1 & >> /dev/null
 fi
 
 #7.7 首次启动检测
-if [ ! `ps aux| grep v2ray|grep -v 'grep'|awk '{print $12}'` = "--config=/etc/v2ray/config.json" ]; then
+if [ ! `ps aux| grep v2ray|grep -v 'grep'|awk '{print $12}'` = "--config=/usr/local/etc/v2ray/config.json" ]; then
     printr "v2ray启动失败，参考日志：";
     journalctl -u v2ray;
     exit 1;

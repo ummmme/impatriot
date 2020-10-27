@@ -11,6 +11,7 @@ printr() {
 printr "请注意：本脚本将测试所有Linode节点速度，并输出测试结果表格，预计耗时约1~2分钟";
 
 node_list=(
+'syd1'
 'newark'
 'atlanta'
 'dallas'
