@@ -267,7 +267,7 @@ mkdir -p /usr/local/nginx/ssl
 
 #更新v2ray 安装方式---------------------------------------------------------------
 #7.1 安装V2ray（新）
-bash <(curl -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-dat-release.sh);
+bash <(curl -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh);
 
 #7.2 生成服务端配置（单配置文件模式）
 mkdir -p /etc/v2ray
