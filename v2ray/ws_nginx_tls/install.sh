@@ -6,13 +6,12 @@
 #3. 申请证书：acme.sh
 #4. 安装V2ray
 #5. 安装完成后，将生成的客户端配置下载到本地导入GUI工具即可
-#2020-10-27 更新v2ray安装脚本，支持4.31
+#2021-03-02 更新v2ray安装脚本，支持4.34版本的 启动命令
 
 #------------------------------------------------------------------
 #自定义区域：可手动选择404页面的模板序号，默认为2
 FRONTPAGE_INDEX=2
 #------------------------------------------------------------------
-
 
 NGINX_VERSION="1.19.1"
 OPENSSL_VERSION="1.1.1g"
@@ -35,7 +34,6 @@ INFO：服务端v2ray版本为：$2，请注意客户端版本是否匹配
 *-----------------------------------------------------------------------
 EOF
 }
-
 
 printr() {
     echo; echo "## $1"; echo;
@@ -485,20 +483,37 @@ EOF
 #7.5 重启nginx
 systemctl restart nginx
 
-#7.6 启动v2ray（指定单配置文件模式）
+#7.7 自定义v2ray-daemon（截至4.34版本）
+#备用启动命令： nohup /usr/local/bin/v2ray --config=/usr/local/etc/v2ray/config.json 2>&1 & >> /dev/null
 if [[ -f "/etc/systemd/system/v2ray.service" ]]; then
-    cp /etc/systemd/system/v2ray.service /etc/systemd/system/v2ray.service.bak
-#     sed -i "s^ExecStart=/usr/local/bin/v2ray -confdir /usr/local/etc/v2ray/^ExecStart=/usr/local/bin/v2ray --config=/usr/local/etc/v2ray/config.json^g" /etc/systemd/system/v2ray.service
-    systemctl enable v2ray
-    systemctl daemon-reload
-    systemctl start v2ray
-else
-    printr "v2ray.service结构似乎已经变动，无法替换启动命令，使用nohup /usr/local/bin/v2ray --config=/usr/local/etc/v2ray/config.json &命令启动v2ray"
-    nohup /usr/local/bin/v2ray --config=/usr/local/etc/v2ray/config.json 2>&1 & >> /dev/null
+    mv /etc/systemd/system/v2ray.service /etc/systemd/system/v2ray.service.bak
 fi
 
+cat > /etc/systemd/system/v2ray.service << EOF
+[Unit]
+Description=V2Ray Service
+After=network.target nss-lookup.target
+
+[Service]
+User=nobody
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ExecStart=/usr/local/bin/v2ray -config /usr/local/etc/v2ray/config.json
+Restart=on-failure
+RestartPreventExitStatus=23
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+#7.6 启动v2ray（指定单配置文件模式）
+systemctl enable v2ray
+systemctl daemon-reload
+systemctl start v2ray
+
 #7.7 首次启动检测
-if [ ! `ps aux| grep v2ray|grep -v 'grep'|awk '{print $12}'` = "--config=/usr/local/etc/v2ray/config.json" ]; then
+if [ ! `ps aux| grep v2ray|grep -v 'grep'|awk '{print $11}'` = "/usr/local/bin/v2ray" ]; then
     printr "v2ray启动失败，参考日志：";
     journalctl -u v2ray;
     exit 1;
