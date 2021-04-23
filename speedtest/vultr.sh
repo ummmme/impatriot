@@ -17,6 +17,7 @@ node_list=(
 'London|lon-gb-ping.vultr.com'
 'Singapore|sgp-ping.vultr.com'
 'Tokyo|hnd-jp-ping.vultr.com'
+'Seoul|sel-kor-ping.vultr.com'
 'NewYork(NJ)|nj-us-ping.vultr.com'
 'Toronto|tor-ca-ping.vultr.com'
 'Chicago|il-us-ping.vultr.com'
