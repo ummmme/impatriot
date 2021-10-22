@@ -6,7 +6,7 @@
 #3. 申请证书：acme.sh
 #4. 安装V2ray
 #5. 安装完成后，将生成的客户端配置下载到本地导入GUI工具即可
-#2021-03-02 更新v2ray安装脚本，支持4.34版本的 启动命令
+# 2021-10-22 更新：将acme.sh默认的CA服务器手动指定为Let's Encrypt
 
 #------------------------------------------------------------------
 #自定义区域：可手动选择404页面的模板序号，默认为2
@@ -254,7 +254,7 @@ source ~/.bashrc
 mkdir -p /usr/local/nginx/ssl
 
 #6.2 申请证书
-/root/.acme.sh/acme.sh  --issue -d ${PROXY_DOMAIN} --webroot /export/www/${PROXY_DOMAIN}
+/root/.acme.sh/acme.sh --server letsencrypt --issue -d ${PROXY_DOMAIN} --webroot /export/www/${PROXY_DOMAIN}
 
 #6.3 安装证书
 /root/.acme.sh/acme.sh --installcert -d ${PROXY_DOMAIN} \
