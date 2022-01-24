@@ -12,7 +12,7 @@
 #自定义区域：可手动选择404页面的模板序号，默认为2
 FRONTPAGE_INDEX=2
 #------------------------------------------------------------------
-
+V2RAY_VERSION="v4.44.0"
 NGINX_VERSION="1.19.1"
 OPENSSL_VERSION="1.1.1g"
 
@@ -268,7 +268,7 @@ mkdir -p /usr/local/nginx/ssl
 
 #更新v2ray 安装方式---------------------------------------------------------------
 #7.1 安装V2ray（新）
-bash <(curl -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh);
+bash <(curl -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh) --version ${V2RAY_VERSION};
 
 #7.2 生成服务端配置（单配置文件模式）
 mkdir -p /etc/v2ray
