@@ -195,6 +195,8 @@ EOF
 
 
 # 启动nginx
+systemctl enable nginx
+systemctl daemon-reload
 systemctl start nginx
 
 #4.2 配置nginx.ws_nginx_tls, 默认主页为404页面
