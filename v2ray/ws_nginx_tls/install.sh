@@ -7,6 +7,7 @@
 #4. 安装V2ray
 #5. 安装完成后，将生成的客户端配置下载到本地导入GUI工具即可
 # 2021-10-22 更新：将acme.sh默认的CA服务器手动指定为Let's Encrypt
+# 2022-01-24 更新：alterId修改为0，参见 https://github.com/233boy/v2ray/issues/812
 
 #------------------------------------------------------------------
 #自定义区域：可手动选择404页面的模板序号，默认为2
@@ -85,7 +86,7 @@ fi
 sudo apt update && sudo apt upgrade -y
 
 #安装必要的组件
-sudo apt install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim
+sudo apt install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim net-tools
 
 #配置三级域名来转发v2ray流量，不要用二级域名
 PROXY_DOMAIN_CERT_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.fullchain.cer"
@@ -294,7 +295,7 @@ cat > /usr/local/etc/v2ray/config.json << EOF
         "clients": [
           {
             "id": "${UUID}",
-            "alterId": 32
+            "alterId": 0
           }
         ]
       },
@@ -434,7 +435,7 @@ cat > /usr/local/etc/v2ray/config.json.${PROXY_DOMAIN} << EOF
             "users":[
               {
                 "id":"${UUID}",
-                "alterId":32
+                "alterId":0
               }
             ],
             "address":"${PROXY_DOMAIN}",

@@ -13,7 +13,7 @@ V2Ray一键安装脚本
 
 ## Preparations & Requirements
 ```bash
-apt update && apt upgrade 
+apt update && apt -y upgrade 
 apt install -y curl
 ```
 
@@ -23,6 +23,7 @@ bash <(curl -f -L -sS https://raw.githubusercontent.com/abcfyk/impatriot/master/
 ```
 
 ## Note
+- 仅支持Debian类系统，含Ubuntu及其衍生版
 - 切勿在安装了$$的服务器上使用此脚本，切记切记
 
 ## License
