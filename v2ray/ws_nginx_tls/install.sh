@@ -30,7 +30,7 @@ EOF
 showFinishInfo() {
 cat 1>&2 <<EOF
 *-----------------------------------------------------------------------
-INFO：v2ray 已经安装并配置完毕，请将生成的配置文件：/usr/local/etc/v2ray/config.json.$1 下载至本地导入到客户端使用
+INFO：v2ray 已经安装并配置完毕，请将生成的配置文件：/tmp/$1.json 下载至本地导入到客户端使用
 INFO：服务端v2ray版本为：$2，请注意客户端版本是否匹配
 *-----------------------------------------------------------------------
 EOF
@@ -406,7 +406,7 @@ EOF
 
 
 #7.4 生成客户端配置(复制到本地)
-cat > /usr/local/etc/v2ray/config.json.${PROXY_DOMAIN} << EOF
+cat > /tmp/${PROXY_DOMAIN}.json << EOF
 {
   "log":{},
   "dns":{},
