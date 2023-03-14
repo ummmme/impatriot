@@ -37,7 +37,9 @@ EOF
 }
 
 printr() {
-    echo; echo "## $1"; echo;
+    echo "========================================================================================";
+    echo "## $1";
+    echo "========================================================================================";
 }
 
 # 生成随机数字
@@ -82,10 +84,12 @@ fi
 #-----------------------------------------------------------------------------------------------------------------------
 # 请勿修改以下配置
 #-----------------------------------------------------------------------------------------------------------------------
-#更新系统
+#1. 更新系统
+printr "1. UPDATING SYSTEM"
 sudo apt update && sudo apt upgrade -y
 
-#安装必要的组件
+#2. 安装必要的组件
+printr "2. INSTALLING REQUIREMENTS"
 sudo apt install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim net-tools
 
 #配置三级域名来转发v2ray流量，不要用二级域名
@@ -133,6 +137,7 @@ if [[ ${lines} -gt 0 ]]; then
 fi
 
 #1.3 开启bbr(Debian9 4.9内核以上已经集成bbr，打开配置即可)
+printr "3. OPENING BBR"
 echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
 echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
 sysctl -p
@@ -153,6 +158,7 @@ tar zxvf nginx-${NGINX_VERSION}.tar.gz && rm nginx-${NGINX_VERSION}.tar.gz
 cd nginx-${NGINX_VERSION} || exit 1;
 
 #编译
+printr "4. CONFIGURING NGINX"
 ./configure --user=www \
 --group=www \
 --prefix=/usr/local/nginx \
@@ -168,12 +174,13 @@ cd nginx-${NGINX_VERSION} || exit 1;
 --with-stream_ssl_module
 
 #安装
+printr "5. INSTALLING NGINX"
 make && make install
 
 #快捷方式
 ln -s /usr/local/nginx/sbin/nginx /usr/sbin/nginx
 
-#Nginx注册服务(注意：Ubuntu的systemd路径与centos不一致)
+#Nginx注册服务(注意：Ubuntu的systemd路径与centos不一致，此处为Ubuntu)
 cat > /etc/systemd/system/nginx.service << EOF
 [Unit]
 Description=Nginx - high performance web server
@@ -195,13 +202,15 @@ EOF
 
 
 # 启动nginx
+printr "6. STARTING NGINX"
 systemctl enable nginx
 systemctl daemon-reload
 systemctl start nginx
 
 #4.2 配置nginx.ws_nginx_tls, 默认主页为404页面
+printr "7. CONFIGURING NGINX WEB PAGE"
 mkdir -p /export/www/${PROXY_DOMAIN}
-curl -f -L -sS https://raw.githubusercontent.com/abcfyk/impatriot/master/404/${FRONTPAGE_INDEX}.html > /export/www/${PROXY_DOMAIN}/index.html
+curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/404/${FRONTPAGE_INDEX}.html > /export/www/${PROXY_DOMAIN}/index.html
 sed -i "s/domainName/${PROXY_DOMAIN}/g" /export/www/${PROXY_DOMAIN}/index.html
 chmod -R 777 /export/www/${PROXY_DOMAIN}
 
@@ -247,9 +256,11 @@ http {
 EOF
 
 #5. 重启
+printr "8. RESTARTING NGINX"
 systemctl restart nginx
 
 #6. 安装acme.sh 自动更新tls证书
+printr "9. INSTALLING ACME.SH"
 curl  https://get.acme.sh | sh
 source ~/.bashrc
 
@@ -257,20 +268,23 @@ source ~/.bashrc
 mkdir -p /usr/local/nginx/ssl
 
 #6.2 申请证书
+printr "10. APPLYING ACME CERT"
 /root/.acme.sh/acme.sh --server letsencrypt --issue -d ${PROXY_DOMAIN} --webroot /export/www/${PROXY_DOMAIN}
 
 #6.3 安装证书
+printr "11. INSTALLING ACME CERT"
 /root/.acme.sh/acme.sh --installcert -d ${PROXY_DOMAIN} \
 --key-file ${PROXY_DOMAIN_KEY_FILE} \
 --fullchain-file ${PROXY_DOMAIN_CERT_FILE} \
 --reloadcmd "systemctl restart nginx"
 
 #6.4 自动更新证书
+printr "12. CONFIGURING ACME AUTO UPGRADE"
 /root/.acme.sh/acme.sh  --upgrade  --auto-upgrade
-
 
 #更新v2ray 安装方式---------------------------------------------------------------
 #7.1 安装V2ray（新）
+printr "13. INSTALLING V2RAY"
 bash <(curl -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh) --version ${V2RAY_VERSION};
 
 #7.2 生成服务端配置（单配置文件模式）
@@ -487,6 +501,7 @@ cat > /tmp/${PROXY_DOMAIN}.json << EOF
 EOF
 
 #7.5 重启nginx
+printr "14. RESTARTING NGINX"
 systemctl restart nginx
 
 #7.7 自定义v2ray-daemon（截至4.34版本）
@@ -514,6 +529,7 @@ WantedBy=multi-user.target
 EOF
 
 #7.6 启动v2ray（指定单配置文件模式）
+printr "15. STARTING V2RAY"
 systemctl enable v2ray
 systemctl daemon-reload
 systemctl start v2ray
