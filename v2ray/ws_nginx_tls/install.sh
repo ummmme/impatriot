@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # VPS一键安装V2ray脚本(使用TLS1.3，优化TLS1.2上的安全性问题)
 #0. 前言：必须先在dns服务商将域名指向新开的服务器，再在服务器上执行本脚本
-#1. 更新系统(Ubuntu18.04,19.04, Debian9,10 测试通过)
+#1. 更新系统(Ubuntu18.04,20.04, Debian9,10 测试通过)
 #2. 编译安装Nginx + openssl
 #3. 申请证书：acme.sh
 #4. 安装V2ray
@@ -13,9 +13,9 @@
 #自定义区域：可手动选择404页面的模板序号，默认为2
 FRONTPAGE_INDEX=2
 #------------------------------------------------------------------
-V2RAY_VERSION="v4.44.0"
+V2RAY_VERSION="v4.45.2"
 NGINX_VERSION="1.19.1"
-OPENSSL_VERSION="1.1.1g"
+OPENSSL_VERSION="1.1.1s"
 
 #说明
 showUsage() {

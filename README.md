@@ -19,7 +19,7 @@ apt install -y curl
 
 ## Quick Start（Recommended）
 ```bash
-bash <(curl -f -L -sS https://raw.githubusercontent.com/abcfyk/impatriot/master/v2ray/ws_nginx_tls/install.sh)
+bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/v2ray/ws_nginx_tls/install.sh)
 ```
 
 ## Note
