@@ -52,14 +52,15 @@ rand(){
 
 #生成随机长度的字符串,默认为5到8位
 randStr() {
-    len=`rand 5 8`;
-    echo $(date +%s%N | md5sum | head -c ${len});
+    len=$(rand 5 8);
+    echo $(date +%s%N | md5sum | head -c "${len}");
 }
 
 #等待输入域名，开始安装
 clear
 showUsage;
-read -p "$(echo "请输入您的域名，确保已经指向当前服务器：")" PROXY_DOMAIN;
+# shellcheck disable=SC2116
+read -p "请输入您的域名，确保已经指向当前服务器：" PROXY_DOMAIN;
 
 #判断域名有效性(兼容GCP等使用弹性IP的云服务器，只需要获取公网出口的IP地址即可，忽略代理层)
 PUBLIC_IP=$(curl ifconfig.me);
@@ -175,12 +176,15 @@ printr "4. CONFIGURING NGINX"
 
 #安装
 printr "5. INSTALLING NGINX"
-make && make install
+make
+make install
 
 #快捷方式
 ln -s /usr/local/nginx/sbin/nginx /usr/sbin/nginx
 
 #Nginx注册服务(注意：Ubuntu的systemd路径与centos不一致，此处为Ubuntu)
+touch /var/run/nginx.pid
+
 cat > /etc/systemd/system/nginx.service << EOF
 [Unit]
 Description=Nginx - high performance web server
@@ -192,14 +196,13 @@ Type=forking
 PIDFile=/var/run/nginx.pid
 ExecStartPre=/usr/local/nginx/sbin/nginx -t -c /usr/local/nginx/conf/nginx.conf
 ExecStart=/usr/local/nginx/sbin/nginx -c /usr/local/nginx/conf/nginx.conf
-ExecReload=/bin/kill -s HUP `cat /var/run/nginx.pid`
-ExecStop=/bin/kill -s QUIT `cat /var/run/nginx.pid`
+ExecReload=/bin/kill -s HUP $(cat /var/run/nginx.pid)
+ExecStop=/bin/kill -s QUIT $(cat /var/run/nginx.pid)
 PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target
 EOF
-
 
 # 启动nginx
 printr "6. STARTING NGINX"
@@ -535,7 +538,7 @@ systemctl daemon-reload
 systemctl start v2ray
 
 #7.7 首次启动检测
-if [ ! `ps aux| grep v2ray|grep -v 'grep'|awk '{print $11}'` = "/usr/local/bin/v2ray" ]; then
+if [ ! $(ps aux| grep v2ray|grep -v 'grep'|awk '{print $11}') = "/usr/local/bin/v2ray" ]; then
     printr "v2ray启动失败，参考日志：";
     journalctl -u v2ray;
     exit 1;
