@@ -8,6 +8,9 @@
 ### v2ray
 V2Ray一键安装脚本
 
+#### WS+TLS+WARP模式
+增加 Warp 进行 chatGPT 流量分流解决1020错误(需要手动同意cloudfare隐私协议)
+
 ### speedtest
 部分VPS测速脚本
 
@@ -19,7 +22,11 @@ apt install -y curl
 
 ## Quick Start（Recommended）
 ```bash
-bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/v2ray/ws_nginx_tls/install.sh)
+# 默认模式
+bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/v2ray/ws_tls/install.sh)
+
+# openai 兼容 
+bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/v2ray/ws_tls_warp/install.sh)
 ```
 
 ## Note

@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
-# VPS一键安装V2ray脚本(使用TLS1.3，优化TLS1.2上的安全性问题)
+# VPS一键安装V2ray脚本（含warp）
 #0. 前言：必须先在dns服务商将域名指向新开的服务器，再在服务器上执行本脚本
-#1. 更新系统(Ubuntu18.04,20.04, Debian9,10 测试通过)
-#2. 编译安装Nginx + openssl
-#3. 申请证书：acme.sh
-#4. 安装V2ray
+#1. 编译安装Nginx + openssl
+#2. 申请证书：acme.sh 并自动更新
+#3. 安装V2ray
+#4. 安装cloudfare warp 并自动配置服务端分流规则
 #5. 安装完成后，将生成的客户端配置下载到本地导入GUI工具即可
-# 2021-10-22 更新：将acme.sh默认的CA服务器手动指定为Let's Encrypt
-# 2022-01-24 更新：alterId修改为0，参见 https://github.com/233boy/v2ray/issues/812
 
 #------------------------------------------------------------------
 #自定义区域：可手动选择404页面的模板序号，默认为2
@@ -37,9 +35,9 @@ EOF
 }
 
 printr() {
-    echo "========================================================================================";
-    echo "## $1";
-    echo "========================================================================================";
+    echo -e "\033[32m====================================================================================\033[0m";
+    echo -e "\033[32m$1\033[0m"
+    echo -e "\033[32m====================================================================================\033[0m";
 }
 
 # 生成随机数字
@@ -87,6 +85,8 @@ fi
 #-----------------------------------------------------------------------------------------------------------------------
 #1. 更新系统
 printr "1. UPDATING SYSTEM"
+curl https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
 sudo apt update && sudo apt upgrade -y
 
 #2. 安装必要的组件
@@ -285,9 +285,23 @@ printr "11. INSTALLING ACME CERT"
 printr "12. CONFIGURING ACME AUTO UPGRADE"
 /root/.acme.sh/acme.sh  --upgrade  --auto-upgrade
 
+
+# 7. 安装Cloudfare warp---------------------------------------------------------------
+printr "13. INSTALL CF WARP"
+apt install -y cloudflare-warp
+
+if [ ! pgrep -x warp-svc ]; then
+    printr "ERROR: WARP SERVICE NOT RUNNING";
+fi
+
+warp-cli register
+warp-cli set-mode proxy
+warp-cli connect
+warp-cli enable-always-on
+
 #更新v2ray 安装方式---------------------------------------------------------------
 #7.1 安装V2ray（新）
-printr "13. INSTALLING V2RAY"
+printr "14. INSTALLING V2RAY"
 bash <(curl -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh) --version ${V2RAY_VERSION};
 
 #7.2 生成服务端配置（单配置文件模式）
@@ -319,7 +333,11 @@ cat > /usr/local/etc/v2ray/config.json << EOF
         ]
       },
       "protocol": "vmess",
-      "port": 44222
+      "port": 44222,
+      "sniffing": {
+      	"enabled": true,
+      	"destOverride": ["http", "tls"]
+      }
     }
   ],
   "outbounds": [
@@ -332,6 +350,19 @@ cat > /usr/local/etc/v2ray/config.json << EOF
       "tag": "blocked",
       "settings": {},
       "protocol": "blackhole"
+    },
+    {
+      "tag":"warp",
+      "protocol":"socks",
+      "settings": {
+        "servers": [
+          {
+            "address":"127.0.0.1",
+            "port":40000,
+            "users":[]
+          }
+        ]
+      }
     }
   ],
   "routing": {
@@ -342,6 +373,14 @@ cat > /usr/local/etc/v2ray/config.json << EOF
           "geoip:private"
         ],
         "outboundTag": "blocked"
+      },
+      {
+        "type": "field",
+        "outboundTag": "warp",
+        "domain": [
+          "openai.com",
+          "geosite:openai"
+        ]
       }
     ],
     "domainStrategy": "AsIs"
@@ -421,8 +460,20 @@ http {
 }
 EOF
 
+#7.4 更新服务端的geosite文件
+# 下载 geoip.dat 和 geosite.dat 文件
+wget -c https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat -O /tmp/geosite.dat
+wget -c https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat -O /tmp/geoip.dat
 
-#7.4 生成客户端配置(复制到本地)
+# 备份
+cp /usr/local/share/v2ray/geosite.dat /usr/local/share/v2ray/geosite.dat.bak
+cp /usr/local/share/v2ray/geoip.dat /usr/local/share/v2ray/geoip.dat.bak
+
+# 更新
+mv /tmp/geoip.dat /usr/local/share/v2ray/geoip.dat
+mv /tmp/geosite.dat /usr/local/share/v2ray/geosite.dat
+
+#7.5 生成客户端配置(复制到本地)
 cat > /tmp/${PROXY_DOMAIN}.json << EOF
 {
   "log":{},
