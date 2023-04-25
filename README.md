@@ -10,6 +10,7 @@ V2Ray一键安装脚本
 
 #### WS+TLS+WARP模式
 增加 Warp 进行 chatGPT 流量分流解决1020错误(需要手动同意cloudfare隐私协议)
+![v2ray_warp](../../../assets/img/v2ray_warp.png)
 
 ### speedtest
 部分VPS测速脚本
