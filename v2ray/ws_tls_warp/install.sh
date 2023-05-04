@@ -14,6 +14,9 @@ FRONTPAGE_INDEX=1
 V2RAY_VERSION="v4.45.2"
 NGINX_VERSION="1.19.1"
 OPENSSL_VERSION="1.1.1s"
+REPO_ADDR="https://raw.githubusercontent.com/ummmme/impatriot"
+V2RAY_INSTALL_SCRIPT="https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh"
+GEO_FILES_DOWNLOAD="https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/"
 
 #说明
 showUsage() {
@@ -172,11 +175,12 @@ printr "4. CONFIGURING NGINX"
 --with-http_stub_status_module \
 --with-http_sub_module \
 --with-stream \
---with-stream_ssl_module
+--with-stream_ssl_module \
+> /tmp/nginx_conf.log
 
 #安装
 printr "5. INSTALLING NGINX"
-make && make install
+make > /tmp/nginx_make.log && make install > /tmp/nginx_make_install.log
 
 #快捷方式
 ln -s /usr/local/nginx/sbin/nginx /usr/sbin/nginx
@@ -216,7 +220,7 @@ fi
 #4.2 配置nginx.ws_nginx_tls, 默认主页为404页面
 printr "7. CONFIGURING NGINX WEB PAGE"
 mkdir -p /export/www/${PROXY_DOMAIN}
-curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/404/${FRONTPAGE_INDEX}.html > /export/www/${PROXY_DOMAIN}/index.html
+curl -f -L -sS ${REPO_ADDR}/master/404/${FRONTPAGE_INDEX}.html > /export/www/${PROXY_DOMAIN}/index.html
 sed -i "s/domainName/${PROXY_DOMAIN}/g" /export/www/${PROXY_DOMAIN}/index.html
 chmod -R 777 /export/www/${PROXY_DOMAIN}
 
@@ -296,17 +300,17 @@ if [ ! pgrep -x warp-svc ]; then
     printr "ERROR: WARP SERVICE NOT RUNNING";
 fi
 
-warp-cli register
+# 使用expect 进行 warp-cli register
+bash <(curl -f -L -sS ${REPO_ADDR}/master/v2ray/ws_tls_warp/warp_reg.sh)
 
 warp-cli set-mode proxy
 warp-cli connect
 warp-cli enable-always-on
 
-
 #更新v2ray 安装方式---------------------------------------------------------------
 #7.1 安装V2ray（新）
 printr "14. INSTALLING V2RAY"
-bash <(curl -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh) --version ${V2RAY_VERSION};
+bash <(curl -L ${V2RAY_INSTALL_SCRIPT}) --version ${V2RAY_VERSION};
 
 #7.2 生成服务端配置（单配置文件模式）
 mkdir -p /etc/v2ray
@@ -397,8 +401,8 @@ EOF
 
 #7.4 更新服务端的geosite文件
 # 下载 geoip.dat 和 geosite.dat 文件
-wget -c https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat -O /tmp/geosite.dat
-wget -c https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat -O /tmp/geoip.dat
+wget -c ${GEO_FILES_DOWNLOAD}/geosite.dat -O /tmp/geosite.dat
+wget -c ${GEO_FILES_DOWNLOAD}/geoip.dat -O /tmp/geoip.dat
 
 # 备份
 cp /usr/local/share/v2ray/geosite.dat /usr/local/share/v2ray/geosite.dat.bak
@@ -450,7 +454,6 @@ if [ ! $(ps aux| grep v2ray|grep -v 'grep'|awk '{print $11}') = "/usr/local/bin/
 else
     printr "v2ray启动成功";
 fi
-
 
 #8. 优化
 cat > /etc/sysctl.d/default.conf << EOF
