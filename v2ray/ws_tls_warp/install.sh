@@ -3,13 +3,13 @@
 #0. 前言：必须先在dns服务商将域名指向新开的服务器，再在服务器上执行本脚本
 #1. 编译安装Nginx + openssl
 #2. 申请证书：acme.sh 并自动更新
-#3. 安装V2ray
-#4. 安装cloudfare warp 并自动配置服务端分流规则
+#3. 安装V2ray 并使用ws+tls1.3模式
+#4. 安装cloudfare warp 并自动配置 openai.com 的分流规则
 #5. 安装完成后，将生成的客户端配置下载到本地导入GUI工具即可
 
 #------------------------------------------------------------------
 #自定义区域：可手动选择404页面的模板序号，默认为2
-FRONTPAGE_INDEX=2
+FRONTPAGE_INDEX=1
 #------------------------------------------------------------------
 V2RAY_VERSION="v4.45.2"
 NGINX_VERSION="1.19.1"
@@ -91,7 +91,7 @@ sudo apt update && sudo apt upgrade -y
 
 #2. 安装必要的组件
 printr "2. INSTALLING REQUIREMENTS"
-sudo apt install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim net-tools
+sudo apt install -y build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim net-tools tcl tk expect
 
 #配置三级域名来转发v2ray流量，不要用二级域名
 PROXY_DOMAIN_CERT_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.fullchain.cer"
@@ -163,7 +163,7 @@ printr "4. CONFIGURING NGINX"
 ./configure --user=www \
 --group=www \
 --prefix=/usr/local/nginx \
---pid-path=/var/run/nginx.pid \
+--pid-path=/run/nginx.pid \
 --with-openssl=/usr/local/openssl-${OPENSSL_VERSION} \
 --with-openssl-opt='enable-tls1_3' \
 --with-http_v2_module \
@@ -176,16 +176,13 @@ printr "4. CONFIGURING NGINX"
 
 #安装
 printr "5. INSTALLING NGINX"
-make
-make install
+make && make install
 
 #快捷方式
 ln -s /usr/local/nginx/sbin/nginx /usr/sbin/nginx
 
 #Nginx注册服务(注意：Ubuntu的systemd路径与centos不一致，此处为Ubuntu)
-touch /var/run/nginx.pid
-
-cat > /etc/systemd/system/nginx.service << EOF
+cat > /etc/systemd/system/nginx.service << \EOF
 [Unit]
 Description=Nginx - high performance web server
 Documentation=http://nginx.org/en/docs/
@@ -193,11 +190,11 @@ After=network.target remote-fs.target nss-lookup.target
 
 [Service]
 Type=forking
-PIDFile=/var/run/nginx.pid
+PIDFile=/run/nginx.pid
 ExecStartPre=/usr/local/nginx/sbin/nginx -t -c /usr/local/nginx/conf/nginx.conf
 ExecStart=/usr/local/nginx/sbin/nginx -c /usr/local/nginx/conf/nginx.conf
-ExecReload=/bin/kill -s HUP $(cat /var/run/nginx.pid)
-ExecStop=/bin/kill -s QUIT $(cat /var/run/nginx.pid)
+ExecReload=/bin/kill -s HUP $(cat /run/nginx.pid)
+ExecStop=/bin/kill -s QUIT $(cat /run/nginx.pid)
 PrivateTmp=true
 
 [Install]
@@ -209,6 +206,12 @@ printr "6. STARTING NGINX"
 systemctl enable nginx
 systemctl daemon-reload
 systemctl start nginx
+
+if [ ! pgrep -x "nginx" ]; then
+    printr "ERROR: NGINX SERVICE NOT START";
+    journalctl -u nginx;
+    exit 1;
+fi
 
 #4.2 配置nginx.ws_nginx_tls, 默认主页为404页面
 printr "7. CONFIGURING NGINX WEB PAGE"
@@ -223,7 +226,7 @@ user  www;
 worker_processes  auto;
 
 error_log  /usr/local/nginx/logs/error.log warn;
-pid        /var/run/nginx.pid;
+pid        /run/nginx.pid;
 
 worker_rlimit_nofile 65535;
 
@@ -285,7 +288,6 @@ printr "11. INSTALLING ACME CERT"
 printr "12. CONFIGURING ACME AUTO UPGRADE"
 /root/.acme.sh/acme.sh  --upgrade  --auto-upgrade
 
-
 # 7. 安装Cloudfare warp---------------------------------------------------------------
 printr "13. INSTALL CF WARP"
 apt install -y cloudflare-warp
@@ -295,9 +297,11 @@ if [ ! pgrep -x warp-svc ]; then
 fi
 
 warp-cli register
+
 warp-cli set-mode proxy
 warp-cli connect
 warp-cli enable-always-on
+
 
 #更新v2ray 安装方式---------------------------------------------------------------
 #7.1 安装V2ray（新）
@@ -335,8 +339,8 @@ cat > /usr/local/etc/v2ray/config.json << EOF
       "protocol": "vmess",
       "port": 44222,
       "sniffing": {
-      	"enabled": true,
-      	"destOverride": ["http", "tls"]
+        "enabled": true,
+        "destOverride": ["http", "tls"]
       }
     }
   ],
@@ -391,75 +395,6 @@ cat > /usr/local/etc/v2ray/config.json << EOF
 }
 EOF
 
-
-#7.3 更新Nginx的websocket + tls1.3 配置
-cat >  /usr/local/nginx/conf/nginx.conf << EOF
-user  www;
-worker_processes  auto;
-
-error_log  /usr/local/nginx/logs/error.log warn;
-pid        /var/run/nginx.pid;
-
-worker_rlimit_nofile 65535;
-
-events {
-    use epoll;
-    worker_connections  8192;
-    multi_accept on;
-}
-
-http {
-    include       mime.types;
-    default_type  application/octet-stream;
-
-    charset utf-8;
-    access_log  off;
-
-    sendfile        on;
-    tcp_nopush      on;
-    tcp_nodelay     on;
-
-    keepalive_timeout  60;
-
-    server {
-        listen 80;
-        server_name ${PROXY_DOMAIN};
-        rewrite ^(.*)$ https://\${server_name}\$1 permanent;
-    }
-
-    #站点配置
-    server {
-        listen 443 ssl default_server;
-
-        ssl_certificate       ${PROXY_DOMAIN_CERT_FILE};
-        ssl_certificate_key   ${PROXY_DOMAIN_KEY_FILE};
-        ssl_protocols         TLSv1.3;
-        ssl_ciphers 'CHACHA20:EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH:ECDHE-RSA-AES128-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA128:DHE-RSA-AES128-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-GCM-SHA128:ECDHE-RSA-AES128-SHA384:ECDHE-RSA-AES128-SHA128:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES128-SHA128:DHE-RSA-AES128-SHA128:DHE-RSA-AES128-SHA:DHE-RSA-AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA384:AES128-GCM-SHA128:AES128-SHA128:AES128-SHA128:AES128-SHA:AES128-SHA:DES-CBC3-SHA:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!MD5:!PSK:!RC4;';
-        ssl_prefer_server_ciphers on; #优化SSL加密
-        ssl_session_cache shared:SSL:10m;
-        ssl_session_timeout 60m;
-
-        root /export/www/${PROXY_DOMAIN};
-        index index.htm index.html;
-        server_name ${PROXY_DOMAIN};
-        location / {
-            try_files \$uri \$uri/ =404;
-        }
-
-        location /${V2RAY_PATH} {
-            proxy_redirect off;
-            proxy_pass http://127.0.0.1:44222;
-
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade \$http_upgrade;
-            proxy_set_header Connection "upgrade";
-            proxy_set_header Host \$http_host;
-            proxy_read_timeout 300s;
-        }
-    }
-}
-EOF
-
 #7.4 更新服务端的geosite文件
 # 下载 geoip.dat 和 geosite.dat 文件
 wget -c https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat -O /tmp/geosite.dat
@@ -472,87 +407,6 @@ cp /usr/local/share/v2ray/geoip.dat /usr/local/share/v2ray/geoip.dat.bak
 # 更新
 mv /tmp/geoip.dat /usr/local/share/v2ray/geoip.dat
 mv /tmp/geosite.dat /usr/local/share/v2ray/geosite.dat
-
-#7.5 生成客户端配置(复制到本地)
-cat > /tmp/${PROXY_DOMAIN}.json << EOF
-{
-  "log":{},
-  "dns":{},
-  "stats":{},
-  "inbounds":[
-    {
-      "tag":"in-0",
-      "settings":{
-        "udp":true,
-        "auth":"noauth"
-      },
-      "port":"1080",
-      "protocol":"socks"
-    },
-    {
-      "tag":"in-1",
-      "settings":{},
-      "port":"1081",
-      "protocol":"http"
-    }
-  ],
-  "outbounds":[
-    {
-      "tag":"out-0",
-      "settings":{
-        "vnext":[
-          {
-            "users":[
-              {
-                "id":"${UUID}",
-                "alterId":0
-              }
-            ],
-            "address":"${PROXY_DOMAIN}",
-            "port":443
-          }
-        ]
-      },
-      "streamSettings":{
-        "network":"ws",
-        "wsSettings":{
-          "path":"/${V2RAY_PATH}"
-        },
-        "tlsSettings":{
-          "serverName":"${PROXY_DOMAIN}"
-        },
-        "security":"tls"
-      },
-      "protocol":"vmess"
-    },
-    {
-      "tag":"direct",
-      "settings":{},
-      "protocol":"freedom"
-    },
-    {
-      "tag":"blocked",
-      "settings":{},
-      "protocol":"blackhole"
-    }
-  ],
-  "routing":{
-    "rules":[
-      {
-        "type":"field",
-        "ip":[
-          "geoip:private"
-        ],
-        "outboundTag":"direct"
-      }
-    ],
-    "domainStrategy":"IPOnDemand"
-  },
-  "policy":{},
-  "reverse":{},
-  "transport":{}
-}
-EOF
 
 #7.5 重启nginx
 printr "14. RESTARTING NGINX"
