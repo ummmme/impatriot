@@ -512,6 +512,7 @@ sysctl --system
 #7.2 增加文件描述符限制, <所有用户> <软限制和硬限制> <文件描述符> <整型数值>
 mkdir -p /etc/security/limits.d
 echo "* - nofile 65535" > /etc/security/limits.d/default.conf;
+ulimit -n 65535
 
 V_VERSION=`/usr/local/bin/v2ray -version  | grep V2Ray  |   awk '{print  $2}'`;
 showFinishInfo ${PROXY_DOMAIN} ${V_VERSION};
