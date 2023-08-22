@@ -396,7 +396,77 @@ cat > /usr/local/etc/v2ray/config.json << EOF
 }
 EOF
 
+#7.3 更新Nginx的websocket + tls1.3 配置
+printr "15. CONFIGURING NGINX WEBSOCKET SETTINGS"
+cat >  /usr/local/nginx/conf/nginx.conf << EOF
+user  www;
+worker_processes  auto;
+
+error_log  /usr/local/nginx/logs/error.log warn;
+pid        /run/nginx.pid;
+
+worker_rlimit_nofile 65535;
+
+events {
+    use epoll;
+    worker_connections  8192;
+    multi_accept on;
+}
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    charset utf-8;
+    access_log  off;
+
+    sendfile        on;
+    tcp_nopush      on;
+    tcp_nodelay     on;
+
+    keepalive_timeout  60;
+
+    server {
+        listen 80;
+        server_name ${PROXY_DOMAIN};
+        rewrite ^(.*)$ https://\${server_name}\$1 permanent;
+    }
+
+    #站点配置
+    server {
+        listen 443 ssl default_server;
+
+        ssl_certificate       ${PROXY_DOMAIN_CERT_FILE};
+        ssl_certificate_key   ${PROXY_DOMAIN_KEY_FILE};
+        ssl_protocols         TLSv1.3;
+        ssl_ciphers 'CHACHA20:EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH:ECDHE-RSA-AES128-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA128:DHE-RSA-AES128-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-GCM-SHA128:ECDHE-RSA-AES128-SHA384:ECDHE-RSA-AES128-SHA128:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES128-SHA128:DHE-RSA-AES128-SHA128:DHE-RSA-AES128-SHA:DHE-RSA-AES128-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA384:AES128-GCM-SHA128:AES128-SHA128:AES128-SHA128:AES128-SHA:AES128-SHA:DES-CBC3-SHA:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!MD5:!PSK:!RC4;';
+        ssl_prefer_server_ciphers on; #优化SSL加密
+        ssl_session_cache shared:SSL:10m;
+        ssl_session_timeout 60m;
+
+        root /export/www/${PROXY_DOMAIN};
+        index index.htm index.html;
+        server_name ${PROXY_DOMAIN};
+        location / {
+            try_files \$uri \$uri/ =404;
+        }
+
+        location /${V2RAY_PATH} {
+            proxy_redirect off;
+            proxy_pass http://127.0.0.1:44222;
+
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host \$http_host;
+            proxy_read_timeout 300s;
+        }
+    }
+}
+EOF
+
 #7.4 更新服务端的geosite文件
+printr "16. UPDATING V2RAY GEOSITE"
 # 下载 geoip.dat 和 geosite.dat 文件
 wget -c ${GEO_FILES_DOWNLOAD}/geosite.dat -O /tmp/geosite.dat
 wget -c ${GEO_FILES_DOWNLOAD}/geoip.dat -O /tmp/geoip.dat
@@ -410,10 +480,11 @@ mv /tmp/geoip.dat /usr/local/share/v2ray/geoip.dat
 mv /tmp/geosite.dat /usr/local/share/v2ray/geosite.dat
 
 #7.5 重启nginx
-printr "14. RESTARTING NGINX"
+printr "17. RESTARTING NGINX"
 systemctl restart nginx
 
 #7.7 自定义v2ray-daemon（截至4.34版本）
+printr "18. STARTING V2RAY"
 #备用启动命令： nohup /usr/local/bin/v2ray --config=/usr/local/etc/v2ray/config.json 2>&1 & >> /dev/null
 if [[ -f "/etc/systemd/system/v2ray.service" ]]; then
     mv /etc/systemd/system/v2ray.service /etc/systemd/system/v2ray.service.bak
@@ -438,12 +509,12 @@ WantedBy=multi-user.target
 EOF
 
 #7.6 启动v2ray（指定单配置文件模式）
-printr "15. STARTING V2RAY"
 systemctl enable v2ray
 systemctl daemon-reload
 systemctl start v2ray
 
 #7.7 首次启动检测
+printr "19. FIRST TIME START CHECKING"
 if [ ! $(ps aux| grep v2ray|grep -v 'grep'|awk '{print $11}') = "/usr/local/bin/v2ray" ]; then
     printr "v2ray启动失败，参考日志：";
     journalctl -u v2ray;
@@ -453,6 +524,7 @@ else
 fi
 
 #8. 优化
+printr "20. SYSTEM PARAM OPTIMIZATION"
 cat > /etc/sysctl.d/default.conf << EOF
 # 最大打开文件
 fs.file-max = 65535
@@ -510,6 +582,7 @@ EOF
 sysctl --system
 
 #7.2 增加文件描述符限制, <所有用户> <软限制和硬限制> <文件描述符> <整型数值>
+printr "21. FINISHING INSTALL, ENJOY!"
 mkdir -p /etc/security/limits.d
 echo "* - nofile 65535" > /etc/security/limits.d/default.conf;
 ulimit -n 65535
