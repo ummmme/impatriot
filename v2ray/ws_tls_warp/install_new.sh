@@ -152,8 +152,8 @@ fi
 printr "3. OPENING BBR"
 echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
 echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
-sysctl -p
-sysctl net.ipv4.tcp_available_congestion_control
+/usr/sbin/sysctl -p
+/usr/sbin/sysctl net.ipv4.tcp_available_congestion_control
 
 #4. 编译安装Nginx，开启tls1.3支持
 cd /usr/local || exit 1;
@@ -588,7 +588,7 @@ net.ipv4.tcp_mtu_probing = 1
 net.core.default_qdisc = fq
 net.ipv4.tcp_congestion_control = bbr
 EOF
-sysctl --system
+/usr/sbin/sysctl --system
 
 #7.2 增加文件描述符限制, <所有用户> <软限制和硬限制> <文件描述符> <整型数值>
 printr "21. FINISHING INSTALL, ENJOY!"
