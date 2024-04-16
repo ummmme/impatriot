@@ -154,8 +154,8 @@ sysctl net.ipv4.tcp_available_congestion_control
 cd /usr/local || exit 1;
 
 #4.1.1 安装依赖
-groupadd www # 添加组
-useradd -s /sbin/nologin -g www www #添加用户
+/user/sbin/groupadd www # 添加组
+/user/sbin/useradd -s /sbin/nologin -g www www #添加用户
 
 #4.1.2 安装openssl
 tar zxvf openssl-${OPENSSL_VERSION}.tar.gz && rm openssl-${OPENSSL_VERSION}.tar.gz
