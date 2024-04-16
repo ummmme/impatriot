@@ -78,11 +78,13 @@ fi
 wget -c https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz -O /usr/local/nginx-${NGINX_VERSION}.tar.gz
 if [ ! -f "/usr/local/nginx-${NGINX_VERSION}.tar.gz" ]; then
     printr "下载nginx失败，请重试"
+    exit 1;
 fi
 
 wget -c https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz  -O /usr/local/openssl-${OPENSSL_VERSION}.tar.gz
 if [ ! -f "/usr/local/openssl-${OPENSSL_VERSION}.tar.gz" ]; then
     printr "下载openssl失败，请重试"
+    exit 1;
 fi
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -94,11 +96,12 @@ printr "0. CHECKING SYSTEM VERSION";
 curSysName=$(cat /etc/os-release | grep -w NAME | awk -F '=' '{print $2}' | tr -d '"');
 curSysVer=$(cat /etc/os-release | grep -w VERSION_ID | awk -F '=' '{print $2}' | tr -d '"');
 if [[ $curSysName == 'Debian GNU/Linux' ]] && [ $(echo "$curSysVer > 12"|bc) -eq 1 ] ; then
-  echo "OK, System Debian 12+ Matched";
+  printr "OK, System Debian 12+ Matched";
 elif  [[ $curSysName == 'Ubuntu' ]] && [ $(echo "$curSysVer > 22"|bc) -eq 1 ] ; then
-  echo "OK, System Ubuntu 22.04+ Matched";
+  printr "OK, System Ubuntu 22.04+ Matched";
 else
-  echo "[ERROR] System Version is too old to install. Require Version： Debian 12+ or Ubuntu 22.04+"
+  printr "[ERROR] System Version is too old to install. Require Version： Debian 12+ or Ubuntu 22.04+"
+  exit 1;
 fi
 
 #1. 更新系统
@@ -159,8 +162,8 @@ echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
 cd /usr/local || exit 1;
 
 #4.1.1 安装依赖
-/user/sbin/groupadd www # 添加组
-/user/sbin/useradd -s /sbin/nologin -g www www #添加用户
+/usr/sbin/groupadd www # 添加组
+/usr/sbin/useradd -s /sbin/nologin -g www www #添加用户
 
 #4.1.2 安装openssl
 tar zxvf openssl-${OPENSSL_VERSION}.tar.gz && rm openssl-${OPENSSL_VERSION}.tar.gz
@@ -191,7 +194,11 @@ printr "5. INSTALLING NGINX"
 make > /tmp/nginx_make.log && make install > /tmp/nginx_make_install.log
 
 #快捷方式
-ln -s /usr/local/nginx/sbin/nginx /usr/sbin/nginx
+if [ ! -f "/usr/sbin/nginx" ]; then
+  ln -s /usr/local/nginx/sbin/nginx /usr/sbin/nginx
+else
+  rm -f /usr/sbin/nginx && ln -s /usr/local/nginx/sbin/nginx /usr/sbin/nginx
+fi  
 
 #Nginx注册服务(注意：Ubuntu的systemd路径与centos不一致，此处为Ubuntu)
 cat > /etc/systemd/system/nginx.service << \EOF
