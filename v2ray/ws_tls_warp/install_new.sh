@@ -599,5 +599,5 @@ mkdir -p /etc/security/limits.d
 echo "* - nofile 65535" > /etc/security/limits.d/default.conf;
 ulimit -n 65535
 
-V_VERSION=`/usr/local/bin/v2ray -version  | grep V2Ray  |   awk '{print  $2}'`;
+V_VERSION=$(/usr/local/bin/v2ray version  | grep V2Ray  |   awk '{print  $2}');
 showFinishInfo ${PROXY_DOMAIN} ${V_VERSION};
