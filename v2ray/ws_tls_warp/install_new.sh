@@ -74,10 +74,15 @@ if [[ "${PUBLIC_IP}" != "${DOMAIN_IP}" ]]; then
     exit 1;
 fi
 
-#准备Nginx与Openssl的安装文件(暂不做签名比对)
+#下载Nginx与Openssl的安装文件(暂不做签名比对)
 wget -c https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz -O /usr/local/nginx-${NGINX_VERSION}.tar.gz
 if [ ! -f "/usr/local/nginx-${NGINX_VERSION}.tar.gz" ]; then
     printr "下载nginx失败，请重试"
+fi
+
+wget -c https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz  -O /usr/local/openssl-${OPENSSL_VERSION}.tar.gz
+if [ ! -f "/usr/local/openssl-${OPENSSL_VERSION}.tar.gz" ]; then
+    printr "下载openssl失败，请重试"
 fi
 
 #-----------------------------------------------------------------------------------------------------------------------
