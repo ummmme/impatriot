@@ -274,10 +274,11 @@ http {
 }
 EOF
 
-#5. 重启
-printr "8. RESTARTING NGINX"
+#5. 清理安装日志
+printr "8. RESTARTING NGINX & CLEANING NGINX INSTALL LOGS"
 systemctl enable nginx
 systemctl restart nginx
+rm -f /tmp/nginx_make*.log 
 
 #6. 安装acme.sh 自动更新tls证书
 printr "9. INSTALLING ACME.SH"
