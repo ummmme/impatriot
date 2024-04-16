@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# VPS一键安装V2ray脚本（含warp）
+# VPS一键安装V2ray脚本（含warp）: 不支持低于Ubuntu22.04以下版本，不支持低于Debian 11以下版本;
 #0. 前言：必须先在dns服务商将域名指向新开的服务器，再在服务器上执行本脚本
 #1. 编译安装Nginx + openssl
 #2. 申请证书：acme.sh 并自动更新
 #3. 安装V2ray 并使用ws+tls1.3模式
 #4. 安装cloudfare warp 并自动配置 openai.com 的分流规则
 #5. 安装完成后，将生成的客户端配置下载到本地导入GUI工具即可
-#支持：Debian 12，Ubuntu 22.04、24.04版本，并更新v2ray版本； 不支持低于Ubuntu22.04以下版本， 不支持低于Debian 12以下版本
+#更新v2ray版本至5.14；更新NGINX版本至1.24；更新openssl版本至3.0.13
 
 #------------------------------------------------------------------
 #自定义区域：可手动选择404页面的模板序号，默认为2
@@ -102,13 +102,12 @@ apt install -yqq build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsu
 printr "0. CHECKING SYSTEM VERSION";
 curSysName=$(cat /etc/os-release | grep -w NAME | awk -F '=' '{print $2}' | tr -d '"');
 curSysVer=$(cat /etc/os-release | grep -w VERSION_ID | awk -F '=' '{print $2}' | tr -d '"');
-if [[ $curSysName == 'Debian GNU/Linux' ]] && [ $(echo "$curSysVer > 12"|bc) -eq 1 ] ; then
+if [[ $curSysName == 'Debian GNU/Linux' ]] && [ $(echo "$curSysVer >= 11" |bc) -eq 1 ] ; then
   printr "OK, System Debian 12+ Matched";
 elif  [[ $curSysName == 'Ubuntu' ]] && [ $(echo "$curSysVer > 22"|bc) -eq 1 ] ; then
   printr "OK, System Ubuntu 22.04+ Matched";
 else
   printr "[ERROR] System Version is too old to install. Require Version： Debian 12+ or Ubuntu 22.04+"
-  exit 1;
 fi
 
 #配置三级域名来转发v2ray流量，不要用二级域名
