@@ -90,8 +90,15 @@ fi
 #-----------------------------------------------------------------------------------------------------------------------
 # 请勿修改以下配置
 #-----------------------------------------------------------------------------------------------------------------------
-#0. 验证：
-#0.1 系统版本 Debian12+， Ubuntu22.04+
+#1. 更新系统
+printr "1. UPDATING SYSTEM"
+curl https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/cloudflare-client.list
+apt update -qq && apt upgrade -yqq
+apt install -yqq build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim net-tools tcl tk expect bc
+
+#2. 验证：
+#2.1 系统版本 Debian12+， Ubuntu22.04+
 printr "0. CHECKING SYSTEM VERSION";
 curSysName=$(cat /etc/os-release | grep -w NAME | awk -F '=' '{print $2}' | tr -d '"');
 curSysVer=$(cat /etc/os-release | grep -w VERSION_ID | awk -F '=' '{print $2}' | tr -d '"');
@@ -103,16 +110,6 @@ else
   printr "[ERROR] System Version is too old to install. Require Version： Debian 12+ or Ubuntu 22.04+"
   exit 1;
 fi
-
-#1. 更新系统
-printr "1. UPDATING SYSTEM"
-curl https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/cloudflare-client.list
-apt update -qq && apt upgrade -yqq
-
-#2. 安装必要的组件
-printr "2. INSTALLING REQUIREMENTS"
-apt install -yqq build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim net-tools tcl tk expect 
 
 #配置三级域名来转发v2ray流量，不要用二级域名
 PROXY_DOMAIN_CERT_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.fullchain.cer"
