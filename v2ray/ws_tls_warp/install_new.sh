@@ -496,6 +496,88 @@ mv /tmp/geosite.dat /usr/local/share/v2ray/geosite.dat
 printr "17. RESTARTING NGINX"
 systemctl restart nginx
 
+#7.6 客户端配置
+cat > /tmp/${PROXY_DOMAIN}.json << EOF
+{
+  "log":{},
+  "dns":{},
+  "stats":{},
+  "inbounds":[
+    {
+      "tag":"in-0",
+      "settings":{
+        "udp":true,
+        "auth":"noauth"
+      },
+      "port":"1080",
+      "protocol":"socks"
+    },
+    {
+      "tag":"in-1",
+      "settings":{},
+      "port":"1081",
+      "protocol":"http"
+    }
+  ],
+  "outbounds":[
+    {
+      "tag":"out-0",
+      "settings":{
+        "vnext":[
+          {
+            "users":[
+              {
+                "id":"${UUID}",
+                "alterId":0
+              }
+            ],
+            "address":"${PROXY_DOMAIN}",
+            "port":443
+          }
+        ]
+      },
+      "streamSettings":{
+        "network":"ws",
+        "wsSettings":{
+          "path":"/${V2RAY_PATH}"
+        },
+        "tlsSettings":{
+          "serverName":"${PROXY_DOMAIN}"
+        },
+        "security":"tls"
+      },
+      "protocol":"vmess"
+    },
+    {
+      "tag":"direct",
+      "settings":{},
+      "protocol":"freedom"
+    },
+    {
+      "tag":"blocked",
+      "settings":{},
+      "protocol":"blackhole"
+    }
+  ],
+  "routing":{
+    "rules":[
+      {
+        "type":"field",
+        "ip":[
+          "geoip:private"
+        ],
+        "outboundTag":"direct"
+      }
+    ],
+    "domainStrategy":"IPOnDemand"
+  },
+  "policy":{},
+  "reverse":{},
+  "transport":{}
+}
+EOF
+
+
 #7.7 自定义v2ray-daemon（截至4.34版本）
 printr "18. STARTING V2RAY"
 #备用启动命令： nohup /usr/local/bin/v2ray --config=/usr/local/etc/v2ray/config.json 2>&1 & >> /dev/null
@@ -521,12 +603,12 @@ RestartPreventExitStatus=23
 WantedBy=multi-user.target
 EOF
 
-#7.6 启动v2ray（指定单配置文件模式）
+#7.8 启动v2ray（指定单配置文件模式）
 systemctl enable v2ray
 systemctl daemon-reload
 systemctl start v2ray
 
-#7.7 首次启动检测
+#7.9 首次启动检测
 printr "19. FIRST TIME START CHECKING"
 if [ ! $(ps aux| grep v2ray|grep -v 'grep'|awk '{print $11}') = "/usr/local/bin/v2ray" ]; then
     printr "v2ray启动失败，参考日志：";
@@ -594,11 +676,12 @@ net.ipv4.tcp_congestion_control = bbr
 EOF
 /usr/sbin/sysctl --system
 
-#7.2 增加文件描述符限制, <所有用户> <软限制和硬限制> <文件描述符> <整型数值>
+#8.2 增加文件描述符限制, <所有用户> <软限制和硬限制> <文件描述符> <整型数值>
 printr "21. FINISHING INSTALL, ENJOY!"
 mkdir -p /etc/security/limits.d
 echo "* - nofile 65535" > /etc/security/limits.d/default.conf;
 ulimit -n 65535
 
+#9. ALL DONE
 V_VERSION=$(/usr/local/bin/v2ray version  | grep V2Ray  |   awk '{print  $2}');
 showFinishInfo ${PROXY_DOMAIN} ${V_VERSION};
