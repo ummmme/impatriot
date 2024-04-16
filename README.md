@@ -18,7 +18,7 @@ V2Ray一键安装脚本
 ## Preparations & Requirements
 ```bash
 apt update && apt -y upgrade 
-apt install -y curl make
+apt install -y sudo curl
 ```
 
 ## Quick Start（Recommended）
