@@ -14,7 +14,7 @@ FRONTPAGE_INDEX=1
 #------------------------------------------------------------------
 V2RAY_VERSION="5.14.1"
 NGINX_VERSION="1.24.0"
-OPENSSL_VERSION="3.0.13"
+OPENSSL_VERSION="3.0.17"
 REPO_ADDR="https://raw.githubusercontent.com/ummmme/impatriot"
 V2RAY_INSTALL_SCRIPT="https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh"
 GEO_FILES_DOWNLOAD="https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/"
