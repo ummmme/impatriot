@@ -30,7 +30,7 @@ bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/
 bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/v2ray/ws_tls_warp/install.sh)
 
 # openai 兼容 ，仅支持Debian12+、Ubuntu22.04+
-bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/v2ray/ws_tls_warp/install.sh)
+bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/v2ray/ws_tls_warp/install_new.sh)
 ```
 
 ## Note
