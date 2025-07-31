@@ -9,7 +9,7 @@
 V2Ray一键安装脚本
 
 #### WS+TLS+WARP模式
-增加 Warp 进行 chatGPT 流量分流解决1020错误(需要手动同意cloudfare隐私协议)
+增加 Warp 组件，默认配置openAI 相关域名进行分流， 若有其他类似被封禁IP 需要解开的需求也可使用
 ![warp](https://github.com/ummmme/impatriot/blob/master/assets/img/warp.png)
 
 ### speedtest
