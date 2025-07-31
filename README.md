@@ -26,16 +26,13 @@ apt install -y sudo curl
 # 默认模式（全自动模式，仅支持Debian10、Ubuntu20.04以下）
 bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/v2ray/ws_tls/install.sh)
 
-# openai 兼容 ，仅支持Debian10、Ubuntu20.04以下
-bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/v2ray/ws_tls_warp/install.sh)
-
-# openai 兼容 ，仅支持Debian12+、Ubuntu22.04+
-bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/v2ray/ws_tls_warp/install_new.sh)
+# 默认模式（全自动模式，Debian12、Ubuntu22.04及以上）
+bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/v2ray/ws_tls/new.sh)
 ```
 
 ## Note
 - 仅支持Debian类系统，含Ubuntu及其衍生版
-- Debian 12+，Ubuntu22.04+ 系统请使用 `install_new.sh`
+- Debian 12+，Ubuntu22.04+ 系统请使用 `new.sh`
 
 ## License
 MIT License
