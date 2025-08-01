@@ -137,7 +137,6 @@ source ~/.bashrc
 touch >> ~/.vimrc
 echo 'syntax on' >> ~/.vimrc
 echo 'set nu' >> ~/.vimrc
-echo 'set spell' >> ~/.vimrc
 echo 'set mouse=""' >> ~/.vimrc
 
 #1.3 开启bbr(Debian9 4.9内核以上已经集成bbr，打开配置即可)
