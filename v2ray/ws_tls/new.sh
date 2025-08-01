@@ -92,7 +92,7 @@ fi
 #1. 更新系统
 printr "1. UPDATING SYSTEM"
 apt update -qq && apt upgrade -yqq
-apt install -yqq build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim net-tools tcl tk expect bc
+apt install -yqq build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim net-tools tcl tk expect bc htop
 
 #2. 验证：
 #2.1 系统版本 Debian12+， Ubuntu22.04+
