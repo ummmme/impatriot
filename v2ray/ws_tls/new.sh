@@ -134,7 +134,7 @@ EOF
 source ~/.bashrc
 
 #1.2 配置vim(Debian12):
-touch >> ~/.vimrc
+touch ~/.vimrc
 echo 'syntax on' >> ~/.vimrc
 echo 'set nu' >> ~/.vimrc
 echo 'set mouse=""' >> ~/.vimrc
