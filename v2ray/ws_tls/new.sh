@@ -133,16 +133,12 @@ alias ls='ls --color=auto'
 EOF
 source ~/.bashrc
 
-#1.2 配置vim(Debian):
-# 备份
-cp /usr/share/vim/vim80/defaults.vim /usr/share/vim/vim80/defaults.vim.bak
-#1.2.1 取消可视化模式(删除带有set mouse=a)
-lines=`grep -n 'set mouse=a' /usr/share/vim/vim80/defaults.vim | tail -1 | awk -F ":" '{print $1}'`;
-if [[ ${lines} -gt 0 ]]; then
-    startM=`expr ${lines} - 1`;
-    endN=`expr ${lines} + 1`;
-    sed -i ${startM},${endN}d /usr/share/vim/vim80/defaults.vim
-fi
+#1.2 配置vim(Debian12):
+touch >> ~/.vimrc
+echo 'syntax on' >> ~/.vimrc
+echo 'set nu' >> ~/.vimrc
+echo 'set spell' >> ~/.vimrc
+echo 'set mouse=""' >> ~/.vimrc
 
 #1.3 开启bbr(Debian9 4.9内核以上已经集成bbr，打开配置即可)
 printr "3. OPENING BBR"
