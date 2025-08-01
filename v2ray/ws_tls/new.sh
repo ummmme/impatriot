@@ -346,19 +346,6 @@ cat > /usr/local/etc/v2ray/config.json << EOF
       "tag": "blocked",
       "settings": {},
       "protocol": "blackhole"
-    },
-    {
-      "tag":"warp",
-      "protocol":"socks",
-      "settings": {
-        "servers": [
-          {
-            "address":"127.0.0.1",
-            "port":40000,
-            "users":[]
-          }
-        ]
-      }
     }
   ],
   "routing": {
@@ -369,14 +356,6 @@ cat > /usr/local/etc/v2ray/config.json << EOF
           "geoip:private"
         ],
         "outboundTag": "blocked"
-      },
-      {
-        "type": "field",
-        "outboundTag": "warp",
-        "domain": [
-          "openai.com",
-          "geosite:openai"
-        ]
       }
     ],
     "domainStrategy": "AsIs"
