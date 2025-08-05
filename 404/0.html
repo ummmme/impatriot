@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创造恒久之物 - 个人主页</title>
+    <meta name="description" content="一个关于创造、思考与构建长期价值的个人空间。">
+    
+    <!-- 引入外部资源 -->
+    <link href="https://cdn.staticfile.org/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.staticfile.org/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- 自定义样式与 Apple 风格复刻 -->
+    <style>
+        /* 
+         * 设计师笔记:
+         * 1. 字体系统: 优先使用系统UI字体，这是Apple设计风格的精髓。
+         *    -apple-system 是关键，它会在macOS和iOS上调用San Francisco字体。
+         *    Noto Sans SC 作为中文后备，保证跨平台体验。
+         * 2. 色彩变量: 为了流畅的深/浅色模式切换，将核心颜色定义为CSS变量。
+         *    --bg-color, --text-primary, --text-secondary...
+         * 3. 动效: transition-property 设置为 all 会影响性能，精准指定 color, background-color, transform 等更佳。
+         *    duration-300 (300ms) 是一个非常舒适的过渡时间。
+        */
+        :root {
+            --bg-color: #f5f5f7;
+            --bg-secondary-color: #ffffff;
+            --text-primary: #1d1d1f;
+            --text-secondary: #515154;
+            --text-link: #007AFF;
+            --border-color: #d2d2d7;
+            --header-bg: rgba(255, 255, 255, 0.8);
+        }
+
+        html.dark {
+            --bg-color: #000000;
+            --bg-secondary-color: #1d1d1f;
+            --text-primary: #f5f5f7;
+            --text-secondary: #a1a1a6;
+            --text-link: #0A84FF;
+            --border-color: #3a3a3c;
+            --header-bg: rgba(29, 29, 31, 0.7);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", "Noto Sans SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* 统一过渡效果，实现丝滑体验 */
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        /* 标题使用更具力量感的字重 */
+        h1, h2, h3 {
+            color: var(--text-primary);
+        }
+
+        p {
+            color: var(--text-secondary);
+        }
+
+        /* 链接样式 */
+        .link {
+            color: var(--text-link);
+            text-decoration: none;
+            transition: opacity 0.2s ease;
+        }
+        .link:hover {
+            opacity: 0.7;
+        }
+        .link-with-arrow::after {
+            content: ' →';
+            display: inline-block;
+            transition: transform 0.2s ease;
+        }
+        .link-with-arrow:hover::after {
+            transform: translateX(4px);
+        }
+
+        /* 毛玻璃效果 */
+        .backdrop-blur-lg {
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+        }
+
+        /* 渐变标题 */
+        .gradient-text {
+            background-image: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        html.dark .gradient-text {
+            background-image: linear-gradient(120deg, #007AFF 0%, #5856D6 100%);
+        }
+
+        /* 卡片悬浮微交互 */
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        html.dark .card-hover:hover {
+             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+
+<body class="antialiased">
+
+    <!-- 
+      设计师笔记: 
+      Header 结构清晰，使用 flex 布局实现左右对齐。
+      `sticky top-0 z-50` 是实现吸顶的关键。
+      `backdrop-blur-lg` 是实现毛玻璃效果的核心。
+    -->
+    <header id="main-header" class="sticky top-0 z-50 transition-all duration-300" style="background-color: var(--header-bg); border-bottom: 1px solid var(--border-color);">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- 左侧Logo/名称 -->
+                <div class="flex items-center">
+                    <a href="#" class="text-xl font-bold" style="color: var(--text-primary);">
+                        <i class="fa-solid fa-code-branch mr-2"></i>MyPortfolio
+                    </a>
+                </div>
+                <!-- 右侧导航与切换按钮 -->
+                <div class="flex items-center space-x-6">
+                    <nav class="hidden md:flex space-x-8">
+                        <a href="#principles" class="link text-sm font-medium">原则</a>
+                        <a href="#projects" class="link text-sm font-medium">项目</a>
+                        <a href="#contact" class="link text-sm font-medium">联系</a>
+                    </nav>
+                    <button id="theme-toggle" class="w-10 h-10 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white" style="background-color: var(--bg-secondary-color);">
+                        <i id="theme-icon" class="fas fa-moon text-lg" style="color: var(--text-secondary);"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="overflow-hidden">
+
+        <!-- Hero Section: 视觉冲击与核心思想 -->
+        <section class="text-center py-20 sm:py-32 lg:py-48 px-4">
+            <div class="max-w-4xl mx-auto">
+                <h1 class="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight" style="color: var(--text-primary);">
+                    构建<span class="gradient-text">恒久价值</span>之物
+                </h1>
+                <p class="mt-6 max-w-2xl mx-auto text-lg sm:text-xl" style="color: var(--text-secondary);">
+                    我相信，最好的作品源于深度思考和精湛技艺的结合。专注于创造那些能够经受时间考验、并为世界带来积极影响的解决方案。
+                </p>
+                <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <a href="#principles" class="w-full sm:w-auto px-8 py-3 text-base font-semibold rounded-full text-white transition-opacity duration-300" style="background-color: var(--text-link); color: white;">
+                        探索我的原则
+                    </a>
+                    <a href="#projects" class="w-full sm:w-auto px-8 py-3 text-base font-semibold rounded-full link link-with-arrow">
+                        查看精选项目
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Principles Section: 卡片化展示核心理念 -->
+        <section id="principles" class="py-20 sm:py-24" style="background-color: var(--bg-secondary-color);">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-base font-semibold leading-7" style="color: var(--text-link);">核心原则</h2>
+                    <p class="mt-2 text-3xl sm:text-4xl font-bold tracking-tight">我的创造哲学</p>
+                </div>
+                <div class="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- 原则卡片 1 -->
+                    <div class="card-hover p-8 rounded-3xl" style="background-color: var(--bg-color);">
+                        <div class="text-3xl" style="color: var(--text-link);"><i class="fa-solid fa-feather-pointed"></i></div>
+                        <h3 class="mt-4 text-xl font-semibold">第一性原理</h3>
+                        <p class="mt-2 text-base">回归事物本质，不被现有范式束缚。从物理学的角度看世界，发现问题的根本解。</p>
+                    </div>
+                    <!-- 原则卡片 2 -->
+                    <div class="card-hover p-8 rounded-3xl" style="background-color: var(--bg-color);">
+                        <div class="text-3xl" style="color: var(--text-link);"><i class="fa-solid fa-seedling"></i></div>
+                        <h3 class="mt-4 text-xl font-semibold">长期主义</h3>
+                        <p class="mt-2 text-base">玩无限游戏，而非有限游戏。关注复利效应，无论是知识、财富还是人际关系。</p>
+                    </div>
+                    <!-- 原则卡片 3 -->
+                    <div class="card-hover p-8 rounded-3xl" style="background-color: var(--bg-color);">
+                         <div class="text-3xl" style="color: var(--text-link);"><i class="fa-solid fa-hands-holding-circle"></i></div>
+                        <h3 class="mt-4 text-xl font-semibold">责任与杠杆</h3>
+                        <p class="mt-2 text-base">主动承担责任，以获得杠杆。用代码、媒体和资本，放大个人努力的影响力。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Visualization Section -->
+        <section class="py-20 sm:py-24">
+             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">理念关联图</h2>
+                    <p class="mt-4 max-w-2xl mx-auto" style="color: var(--text-secondary);">
+                        这些原则并非孤立存在，它们相互关联，共同构成了我的价值体系。
+                    </p>
+                </div>
+                <div class="mt-12 flex justify-center">
+                    <div class="mermaid-container p-4 rounded-xl w-full max-w-4xl" style="background-color: var(--bg-secondary-color);">
+                        <pre class="mermaid">
+mindmap
+  root((核心: 创造恒久价值))
+    第一性原理
+      ::icon(fa fa-lightbulb)
+      回归本质
+      打破常规
+    长期主义
+      ::icon(fa fa-infinity)
+      复利效应
+      无限游戏
+    责任与杠杆
+      ::icon(fa fa-rocket)
+      代码 & 媒体
+      资本
+      影响力放大
+    深度工作
+      ::icon(fa fa-brain)
+      专注
+      高质量产出
+                        </pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Further Reading Section (Bonus) -->
+        <section id="projects" class="py-20 sm:py-24" style="background-color: var(--bg-secondary-color);">
+            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">延伸阅读</h2>
+                    <p class="mt-4" style="color: var(--text-secondary);">
+                        塑造我思想体系的书籍。
+                    </p>
+                </div>
+                <ul class="mt-12 space-y-8">
+                    <li class="flex items-start">
+                        <div class="text-xl pt-1" style="color: var(--text-link);"><i class="fa-solid fa-book-open"></i></div>
+                        <div class="ml-4">
+                            <h4 class="font-semibold">《纳瓦尔宝典》 - 埃里克·乔根森</h4>
+                            <p class="mt-1 text-sm">关于财富、幸福和人生哲学的现代箴言录，系统阐述了杠杆和长期主义的重要性。</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                         <div class="text-xl pt-1" style="color: var(--text-link);"><i class="fa-solid fa-book-open"></i></div>
+                        <div class="ml-4">
+                            <h4 class="font-semibold">《穷查理宝典》 - 彼得·考夫曼</h4>
+                            <p class="mt-1 text-sm">跨学科思维模型的典范，展示了如何运用多元思维模型来做出更明智的决策。</p>
+                        </div>
+                    </li>
+                     <li class="flex items-start">
+                         <div class="text-xl pt-1" style="color: var(--text-link);"><i class="fa-solid fa-book-open"></i></div>
+                        <div class="ml-4">
+                            <h4 class="font-semibold">《原则》 - 瑞·达利欧</h4>
+                            <p class="mt-1 text-sm">一本关于如何系统化、原则化地对待生活和工作的操作手册，强调极度透明和开放。</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+
+    </main>
+    
+    <!-- Footer -->
+    <footer id="contact" style="background-color: var(--bg-secondary-color); border-top: 1px solid var(--border-color);">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 text-center">
+            <div class="flex justify-center space-x-6">
+                <a href="#" class="link text-2xl"><i class="fab fa-github"></i></a>
+                <a href="#" class="link text-2xl"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="link text-2xl"><i class="fab fa-linkedin-in"></i></a>
+                <a href="#" class="link text-2xl"><i class="fas fa-envelope"></i></a>
+            </div>
+            <p class="mt-8 text-sm" style="color: var(--text-secondary);">
+                &copy; 2024 Your Name. All Rights Reserved. <br class="sm:hidden"> 设计与代码 by AI & Human.
+            </p>
+        </div>
+    </footer>
+
+    <!-- 引入 JS 资源 -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@latest/dist/mermaid.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- 主题切换逻辑 ---
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const docElement = document.documentElement;
+
+        // 根据本地存储或系统偏好设置初始主题
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        let currentTheme = localStorage.getItem('theme') || (prefersDark ? 'dark' : 'light');
+
+        const applyTheme = (theme) => {
+            docElement.classList.toggle('dark', theme === 'dark');
+            themeIcon.classList.toggle('fa-sun', theme === 'dark');
+            themeIcon.classList.toggle('fa-moon', theme === 'light');
+            localStorage.setItem('theme', theme);
+            currentTheme = theme;
+            // 当主题改变时，重新渲染Mermaid图表
+            renderMermaid(); 
+        };
+
+        themeToggle.addEventListener('click', () => {
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            applyTheme(newTheme);
+        });
+        
+        // --- Mermaid.js 图表渲染逻辑 ---
+        const mermaidContainer = document.querySelector('.mermaid-container');
+        const mermaidChart = document.querySelector('.mermaid');
+        let mermaidRendered = false;
+        
+        const renderMermaid = () => {
+             // 清除已有的SVG，防止重复渲染
+            const existingSvg = mermaidContainer.querySelector('svg');
+            if (existingSvg) {
+                existingSvg.remove();
+            }
+
+            const theme = currentTheme === 'dark' ? 'dark' : 'default';
+            // 自定义主题变量以匹配网站风格
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: 'base',
+                themeVariables: {
+                    background: 'var(--bg-secondary-color)',
+                    mainBkg: currentTheme === 'dark' ? '#3a3a3c' : '#eff2f5',
+                    primaryColor: 'var(--bg-color)',
+                    primaryTextColor: 'var(--text-primary)',
+                    primaryBorderColor: 'var(--border-color)',
+                    secondaryColor: '#007AFF', // Node background for selected
+                    secondaryTextColor: '#ffffff',
+                    tertiaryColor: 'var(--bg-secondary-color)',
+                    nodeTextColor: 'var(--text-primary)',
+                    lineColor: 'var(--border-color)',
+                    textColor: 'var(--text-secondary)',
+                    fontSize: '14px',
+                },
+                mindmap: {
+                    padding: 32,
+                    maxGroupHeight: 10,
+                }
+            });
+
+            // 渲染图表
+            mermaid.render('mermaid-graph', mermaidChart.textContent, (svgCode) => {
+                mermaidContainer.innerHTML = svgCode;
+            });
+        };
+
+        // 初始加载
+        applyTheme(currentTheme);
+    });
+    </
