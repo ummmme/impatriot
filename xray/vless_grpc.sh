@@ -14,8 +14,10 @@ XRAY_VERSION="25.8.3"
 NGINX_VERSION="1.26.3"
 OPENSSL_VERSION="3.0.17"
 REPO_ADDR="https://raw.githubusercontent.com/ummmme/impatriot"
-XRAY_INSTALL_SCRIPT="https://raw.githubusercontent.com/XTLS/Xray-install/raw/main/install-release.sh"
 GEO_FILES_DOWNLOAD="https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/"
+#配置三级域名来转发XRAY流量，不要用二级域名
+PROXY_DOMAIN_CERT_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.fullchain.cer"
+PROXY_DOMAIN_KEY_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.key"
 
 #说明
 showUsage() {
@@ -95,7 +97,7 @@ apt install -yqq build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsu
 
 #2. 验证：
 #2.1 系统版本 Debian12+， Ubuntu22.04+
-printr "0. CHECKING SYSTEM VERSION";
+printr "1. CHECKING SYSTEM VERSION";
 curSysName=$(cat /etc/os-release | grep -w NAME | awk -F '=' '{print $2}' | tr -d '"');
 curSysVer=$(cat /etc/os-release | grep -w VERSION_ID | awk -F '=' '{print $2}' | tr -d '"');
 if [[ $curSysName == 'Debian GNU/Linux' ]] && [ $(echo "$curSysVer >= 12" |bc) -eq 1 ] ; then
@@ -106,21 +108,15 @@ else
   printr "[ERROR] System Version is too old to install. Require Version： Debian 12+ or Ubuntu 22.04+"
 fi
 
-#配置三级域名来转发XRAY流量，不要用二级域名
-PROXY_DOMAIN_CERT_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.fullchain.cer"
-PROXY_DOMAIN_KEY_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.key"
-
 #UUID
 UUID=`cat /proc/sys/kernel/random/uuid`;
 
 #使用随机字符串作为XRAY流量入口
 XRAY_PATH=`randStr`;
 
-#1.0  机器名，时区
-#echo ${HOST_NAME} > /etc/hostname && hostname ${HOST_NAME}
+printr "2. SYSTEM CONFIG";
 timedatectl set-timezone Asia/Shanghai
 
-## 1.1 配置命令alias:
 cat >> ~/.bashrc << EOF
 alias egrep='egrep --color=auto'
 alias fgrep='fgrep --color=auto'
@@ -132,7 +128,6 @@ alias ls='ls --color=auto'
 EOF
 source ~/.bashrc
 
-#1.2 配置vim(Debian12):
 touch ~/.vimrc
 echo 'syntax on' >> ~/.vimrc
 echo 'set nu' >> ~/.vimrc
@@ -298,9 +293,9 @@ printr "12. CONFIGURING ACME AUTO UPGRADE"
 /root/.acme.sh/acme.sh  --upgrade  --auto-upgrade
 
 #7. XRAY 安装---------------------------------------------------------------
-#7.1 安装XRAY（新）
+#7.1 安装XRAY
 printr "14. INSTALLING XRAY"
-bash <(curl -L ${XRAY_INSTALL_SCRIPT}) --version v${XRAY_VERSION};
+bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" install --version v${XRAY_VERSION};
 
 #7.2 生成服务端配置（单配置文件模式）
 mkdir -p /etc/xray
@@ -549,8 +544,10 @@ After=network.target nss-lookup.target
 
 [Service]
 User=nobody
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
-ExecStart=/usr/local/bin/xray run -config /usr/local/etc/xray/config.json # 
+ExecStart=/usr/local/bin/xray run -config /usr/local/etc/xray/config.json
 Restart=on-failure
 RestartPreventExitStatus=23
 LimitNPROC=10000
