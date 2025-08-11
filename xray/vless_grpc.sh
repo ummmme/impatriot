@@ -151,7 +151,7 @@ if ! getent passwd www-data > /dev/null; then
 fi
 
 #4.1.2 安装openssl
-tar zxf openssl-${OPENSSL_VERSION}.tar.gz 2>&1& && rm openssl-${OPENSSL_VERSION}.tar.gz
+tar zxf openssl-${OPENSSL_VERSION}.tar.gz && rm openssl-${OPENSSL_VERSION}.tar.gz
 
 #4.1.3 下载nginx
 tar zxf nginx-${NGINX_VERSION}.tar.gz && rm nginx-${NGINX_VERSION}.tar.gz
