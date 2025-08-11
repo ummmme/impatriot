@@ -15,7 +15,6 @@ NGINX_VERSION="1.26.3"
 OPENSSL_VERSION="3.0.17"
 REPO_ADDR="https://raw.githubusercontent.com/ummmme/impatriot"
 GEO_FILES_DOWNLOAD="https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/"
-#配置三级域名来转发XRAY流量，不要用二级域名
 PROXY_DOMAIN_CERT_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.fullchain.cer"
 PROXY_DOMAIN_KEY_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.key"
 
@@ -135,6 +134,7 @@ echo 'set mouse=""' >> ~/.vimrc
 
 #4. 编译安装Nginx，开启tls1.3支持
 cd /usr/local || exit 1;
+mkdir -p /var/log/nginx
 
 #4.1.1 安装依赖
 # 检查 www-data 用户和组是否存在，不存在则创建
