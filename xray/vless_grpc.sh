@@ -214,9 +214,7 @@ printr "7. CONFIGURING NGINX WEB PAGE"
 mkdir -p /export/www/${PROXY_DOMAIN}
 curl -f -L -sS ${REPO_ADDR}/master/404/${FRONTPAGE_INDEX}.html > /export/www/${PROXY_DOMAIN}/index.html
 sed -i "s/domainName/${PROXY_DOMAIN}/g" /export/www/${PROXY_DOMAIN}/index.html
-chown -R www-data:www-data /export/www/${PROXY_DOMAIN}
-find /export/www/${PROXY_DOMAIN} -type d -exec chmod 755 {} \;
-find /export/www/${PROXY_DOMAIN} -type f -exec chmod 644 {} \;
+chmod -R 777 /export/www/${PROXY_DOMAIN}
 
 mv /usr/local/nginx/conf/nginx.conf /usr/local/nginx/conf/nginx.conf.bak
 cat >  /usr/local/nginx/conf/nginx.conf << EOF
