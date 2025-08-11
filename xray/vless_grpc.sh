@@ -12,7 +12,7 @@ FRONTPAGE_INDEX=0
 #------------------------------------------------------------------
 XRAY_VERSION="25.8.3"
 NGINX_VERSION="1.26.3"
-OPENSSL_VERSION="3.5.2"
+OPENSSL_VERSION="3.0.17"
 REPO_ADDR="https://raw.githubusercontent.com/ummmme/impatriot"
 XRAY_INSTALL_SCRIPT="https://raw.githubusercontent.com/XTLS/Xray-install/raw/main/install-release.sh"
 GEO_FILES_DOWNLOAD="https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/"
@@ -91,7 +91,7 @@ fi
 #1. 更新系统
 printr "1. UPDATING SYSTEM"
 apt update -qq && apt upgrade -yqq
-apt install -yqq build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim net-tools tcl tk expect bc htop
+apt install -yqq build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim net-tools tcl tk perl expect bc htop
 
 #2. 验证：
 #2.1 系统版本 Debian12+， Ubuntu22.04+
@@ -411,7 +411,7 @@ http {
         ssl_protocols TLSv1.3;
 
         # 2. TLS 1.3 加密套件： OpenSSL 默认支持的、兼顾安全和性能的套件，顺序也很合理。
-        ssl_ciphersuites 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256';
+        ssl_ciphers 'ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256';
         ssl_prefer_server_ciphers on;
 
         # 3. OCSP Stapling (在线证书状态协议) 依然推荐开启，可以提升客户端连接性能和隐私。
