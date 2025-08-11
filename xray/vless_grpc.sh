@@ -21,7 +21,7 @@ GEO_FILES_DOWNLOAD="https://github.com/Loyalsoldier/v2ray-rules-dat/releases/lat
 showUsage() {
 cat 1>&2 <<EOF
 *-----------------------------------------------------------------------
-xray 一键安装脚本，自动安装XRAY, nginx, 自动申请证书，自动更新证书，自动生成websocket+nginx+tls1.3模式的服务端和客户端配置
+xray 一键安装脚本，自动安装XRAY, nginx, 自动申请证书，自动更新证书，自动生成vless+nginx+grpc+tls1.3模式的服务端和客户端配置
 注意： 使用本脚本前必须先将域名指向这台服务器
 *-----------------------------------------------------------------------
 EOF
