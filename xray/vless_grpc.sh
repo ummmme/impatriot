@@ -151,10 +151,10 @@ if ! getent passwd www-data > /dev/null; then
 fi
 
 #4.1.2 安装openssl
-tar zxvf openssl-${OPENSSL_VERSION}.tar.gz && rm openssl-${OPENSSL_VERSION}.tar.gz
+tar zxf openssl-${OPENSSL_VERSION}.tar.gz 2>&1& && rm openssl-${OPENSSL_VERSION}.tar.gz
 
 #4.1.3 下载nginx
-tar zxvf nginx-${NGINX_VERSION}.tar.gz && rm nginx-${NGINX_VERSION}.tar.gz
+tar zxf nginx-${NGINX_VERSION}.tar.gz && rm nginx-${NGINX_VERSION}.tar.gz
 cd nginx-${NGINX_VERSION} || exit 1;
 
 #编译
@@ -164,7 +164,6 @@ printr "4. CONFIGURING NGINX"
 --prefix=/usr/local/nginx \
 --pid-path=/run/nginx.pid \
 --with-openssl=/usr/local/openssl-${OPENSSL_VERSION} \
---with-openssl-opt='enable-tls1_3' \
 --with-http_v2_module \
 --with-http_ssl_module \
 --with-http_gzip_static_module \
@@ -226,13 +225,17 @@ find /export/www/${PROXY_DOMAIN} -type f -exec chmod 644 {} \;
 
 mv /usr/local/nginx/conf/nginx.conf /usr/local/nginx/conf/nginx.conf.bak
 cat >  /usr/local/nginx/conf/nginx.conf << EOF
-user  www;
+user  www-data;
 worker_processes  auto;
-
-error_log  /usr/local/nginx/logs/error.log warn;
+error_log  /var/log/nginx/error.log warn; # 使用标准日志路径
 pid        /run/nginx.pid;
-
 worker_rlimit_nofile 65535;
+
+events {
+    use epoll;
+    worker_connections  8192;
+    multi_accept on;
+}
 
 events {
     use epoll;
@@ -397,8 +400,9 @@ http {
 
     #站点配置
     server {
-        listen 443 ssl http2 default_server;
-        listen [::]:443 ssl http2;
+        listen 443 ssl default_server;
+        listen [::]:443 ssl ;
+        http2 on;
 
         ssl_certificate       ${PROXY_DOMAIN_CERT_FILE};
         ssl_certificate_key   ${PROXY_DOMAIN_KEY_FILE};
