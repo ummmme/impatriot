@@ -230,11 +230,6 @@ events {
     multi_accept on;
 }
 
-events {
-    use epoll;
-    worker_connections  8192;
-}
-
 http {
     include       mime.types;
     default_type  application/octet-stream;
