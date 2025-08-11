@@ -412,6 +412,7 @@ http {
 
         # 2. TLS 1.3 加密套件： OpenSSL 默认支持的、兼顾安全和性能的套件，顺序也很合理。
         ssl_ciphersuites 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256';
+        ssl_prefer_server_ciphers on;
 
         # 3. OCSP Stapling (在线证书状态协议) 依然推荐开启，可以提升客户端连接性能和隐私。
         ssl_stapling on;
@@ -437,7 +438,7 @@ http {
 
         location /${XRAY_PATH} {
             # 检查请求类型，增加安全性
-            if ($content_type !~ "application/grpc") {
+            if (\$content_type !~ "application/grpc") {
               return 404;
             }
             # 移除对客户端请求大小的限制
