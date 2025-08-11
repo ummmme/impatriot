@@ -354,7 +354,8 @@ EOF
 
 #7.3 更新Nginx的grpc + tls1.3 配置
 printr "15. CONFIGURING NGINX GRPC SETTINGS"
-cat >  /usr/local/nginx/conf/nginx.conf << EOF
+cp /usr/local/nginx/conf/nginx.conf /usr/local/nginx/conf/nginx.conf.bak_before_xray
+cat > /usr/local/nginx/conf/nginx.conf << EOF
 user  www-data;
 worker_processes  auto;
 error_log  /var/log/nginx/error.log warn; # 使用标准日志路径
@@ -392,34 +393,28 @@ http {
         listen [::]:443 ssl ;
         http2 on;
 
+        server_name ${PROXY_DOMAIN};
+        root /export/www/${PROXY_DOMAIN};
+        index index.htm index.html;
+      
         ssl_certificate       ${PROXY_DOMAIN_CERT_FILE};
         ssl_certificate_key   ${PROXY_DOMAIN_KEY_FILE};
 
-        # 1. 协议版本：明确指定只使用 TLSv1.3。
+        # 协议版本：明确指定只使用 TLSv1.3。
         ssl_protocols TLSv1.3;
-
-        # 2. TLS 1.3 加密套件： OpenSSL 默认支持的、兼顾安全和性能的套件，顺序也很合理。
         ssl_ciphers 'ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256';
         ssl_prefer_server_ciphers on;
-
-        # 3. OCSP Stapling (在线证书状态协议) 依然推荐开启，可以提升客户端连接性能和隐私。
         ssl_stapling on;
         ssl_stapling_verify on;
+        ssl_session_timeout 1d;
+        ssl_session_cache shared:SSL:10m;
 
-        # 需要指定一个 DNS 
         resolver 8.8.8.8 8.8.4.4 valid=300s;
         resolver_timeout 5s;
 
         # 4. HSTS (HTTP Strict Transport Security)  强烈推荐，强制浏览器只使用 HTTPS。 警告：请确保全站已准备好纯 HTTPS。
         add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
 
-        # 5. SSL 会话优化：虽然 TLS 1.3 的会话恢复机制(PSK)与旧版不同，但保留这些配置是无害的， 且有助于管理会话缓存。
-        ssl_session_timeout 1d;
-        ssl_session_cache shared:SSL:10m;
-
-        root /export/www/${PROXY_DOMAIN};
-        index index.htm index.html;
-        server_name ${PROXY_DOMAIN};
         location / {
             try_files \$uri \$uri/ =404;
         }
@@ -429,11 +424,8 @@ http {
             if (\$content_type !~ "application/grpc") {
               return 404;
             }
-            # 移除对客户端请求大小的限制
             client_max_body_size 0;
 
-            # 注意：必须使用 http2，因此 server 块需要开启 http2
-            # 将请求转发给后端的 V2Ray
             grpc_pass grpc://127.0.0.1:44222;
         }
       }
