@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 # 一键安装xray: 不支持低于Ubuntu22.04以下版本，不支持低于Debian 12以下版本;
 #0. 前言：必须先在dns服务商将域名指向新开的服务器，再在服务器上执行本脚本
-#1. 编译安装Nginx + openssl(LTS 版本)
+#1. 编译安装Nginx + openssl(LTS 版本)，强制使用TLS1.3
 #2. 申请证书：acme.sh 并自动更新
-#3. 安装xray 并使用 grpc + tls1.3 模式
+#3. 安装xray 并使用 vless + grpc 模式
 #4. 安装完成后，将生成的客户端配置下载到本地导入GUI工具即可
 
 #------------------------------------------------------------------
-#自定义区域：可手动选择404页面的模板序号
+#变量
 FRONTPAGE_INDEX=0
-#------------------------------------------------------------------
 XRAY_VERSION="25.8.3"
 NGINX_VERSION="1.26.3"
 OPENSSL_VERSION="3.0.17"
@@ -17,13 +16,15 @@ REPO_ADDR="https://raw.githubusercontent.com/ummmme/impatriot"
 GEO_FILES_DOWNLOAD="https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/"
 PROXY_DOMAIN_CERT_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.fullchain.cer"
 PROXY_DOMAIN_KEY_FILE="/usr/local/nginx/ssl/${PROXY_DOMAIN}.key"
+#------------------------------------------------------------------
 
 #说明
 showUsage() {
 cat 1>&2 <<EOF
 *-----------------------------------------------------------------------
-xray 一键安装脚本，自动安装XRAY, nginx, 自动申请证书，自动更新证书，自动生成vless+nginx+grpc+tls1.3模式的服务端和客户端配置
-注意： 使用本脚本前必须先将域名指向这台服务器
+xray 一键安装脚本，自动安装XRAY, nginx, 自动申请证书，自动更新证书，自动生成nginx+vless+grpc+tls1.3模式的服务端和客户端配置
+注意： 使用本脚本前必须先将域名指向这台服务器，
+注意： 请使用 root 执行本脚本
 *-----------------------------------------------------------------------
 EOF
 }
@@ -37,6 +38,13 @@ INFO：请打开浏览器访问 https://$1 ，若可以正常访问表示安装�
 *-----------------------------------------------------------------------
 EOF
 }
+
+#彩色输出
+RED="\033[31m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+BLUE="\033[34m"
+PLAIN="\033[0m"
 
 printr() {
     echo -e "\033[32m====================================================================================\033[0m";
@@ -58,11 +66,18 @@ randStr() {
     echo $(date +%s%N | md5sum | head -c "${len}");
 }
 
+#确保以root用户运行
+if [ "$(id -u)" != "0" ]; then
+   echo -e "${RED}错误：该脚本必须以root用户身份运行！${PLAIN}" 1>&2
+   exit 1
+fi
+
 #等待输入域名，开始安装
 clear
 showUsage;
 # shellcheck disable=SC2116
 read -p "请输入您的域名，确保已经指向当前服务器：" PROXY_DOMAIN;
+
 
 #判断域名有效性(兼容GCP等使用弹性IP的云服务器，只需要获取公网出口的IP地址即可，忽略代理层)
 PUBLIC_IP=$(curl whatismyip.akamai.com);
@@ -92,7 +107,11 @@ fi
 #1. 更新系统
 printr "0. UPDATING SYSTEM"
 apt update -qq && apt upgrade -yqq
-apt install -yqq build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim net-tools tcl tk perl expect bc htop
+apt install -yqq build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim net-tools tcl tk perl expect bc htop qrencode socat
+if [ $? -ne 0 ]; then
+    echo -e "${RED}错误：安装必要工具失败。请检查您的网络连接或系统源。${PLAIN}"
+    exit 1
+fi
 
 #2. 验证：
 #2.1 系统版本 Debian12+， Ubuntu22.04+
