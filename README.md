@@ -17,22 +17,27 @@ V2Ray一键安装脚本
 
 ## Preparations & Requirements
 ```bash
-apt update && apt -y upgrade 
-apt install -y sudo curl
+apt update && apt -y upgrade && apt install -y sudo curl
 ```
 
 ## Quick Start（Recommended）
 ```bash
-# 默认模式（全自动模式，仅支持Debian10、Ubuntu20.04以下）
+# Nginx + Vless + Grpc + TLS1.3， 系统要求：Debian12、Ubuntu22.04及以上
+bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/xray/vless_grpc.sh)
+```
+
+## Quick Start（Legency）
+```bash
+# Nginx + Vmess + WebSocket + TLS1.3，仅支持Debian10、Ubuntu20.04以下
 bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/v2ray/ws_tls/install.sh)
 
-# 默认模式（全自动模式，Debian12、Ubuntu22.04及以上）
+# Nginx + Vmess + WebSocket + TLS1.3，系统要求：Debian12、Ubuntu22.04及以上
 bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/v2ray/ws_tls/new.sh)
 ```
 
 ## Note
 - 仅支持Debian类系统，含Ubuntu及其衍生版
-- Debian 12+，Ubuntu22.04+ 系统请使用 `new.sh`
+- 鉴于 Vmess + Websocket + tls 方案的 Tls In Tls 特征明显，默认建议使用 vless + grpc 方案。
 
 ## License
 MIT License
