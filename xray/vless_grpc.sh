@@ -323,7 +323,7 @@ cat > /usr/local/etc/xray/config.json << EOF
             "id": "${UUID}"
           }
         ],
-      "decryption": "none"
+        "decryption": "none"
       },
       "streamSettings": {
         "network": "grpc",
@@ -331,6 +331,14 @@ cat > /usr/local/etc/xray/config.json << EOF
           "serviceName": "${XRAY_PATH}"
         },
         "security": "none"
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls",
+          "quic"
+        ]
       }
     }
   ],
