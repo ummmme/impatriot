@@ -295,7 +295,10 @@ mkdir -p /etc/xray
 cat > /usr/local/etc/xray/config.json << EOF
 {
   "log": {
-    "loglevel": "warning"
+    "loglevel": "warning",
+    "access": "/var/log/xray/access.log",
+    "error": "/var/log/xray/error.log",
+    "dnsLog": false
   },
   "dns": {},
   "stats": {},
