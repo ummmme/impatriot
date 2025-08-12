@@ -642,6 +642,31 @@ mkdir -p /etc/security/limits.d
 echo "* - nofile 65535" > /etc/security/limits.d/default.conf;
 ulimit -n 65535
 
-#9. ALL DONE
+#9. 生成配置与二维码
 V_VERSION=$(/usr/local/bin/xray version  | grep V2Ray  |   awk '{print  $2}');
 showFinishInfo ${PROXY_DOMAIN} ${V_VERSION};
+
+echo -e "${GREEN}或者你可以使用客户端扫描以下二维码（截图后在客户端内导入也可）。${PLAIN}"
+VLESS_LINK="vless://${UUID}@${PROXY_DOMAIN}:443?encryption=none&security=tls&type=grpc&serviceName=${XRAY_PATH}&sni=${PROXY_DOMAIN}"
+# --- 输出结果 ---
+echo "===================================================================="
+echo " VLESS + gRPC + TLS1.3 配置信息"
+echo "===================================================================="
+echo "  地址 (Address):    ${PROXY_DOMAIN}"
+echo "  端口 (Port):       443"
+echo "  用户ID (UUID):     ${UUID}"
+echo "  传输协议 (Network):  grpc"
+echo "  gRPC服务名 (ServiceName): ${XRAY_PATH}"
+echo "  底层传输安全 (Security): tls1.3"
+echo "--------------------------------------------------------------------"
+echo "  VLESS 链接 (复制到剪贴板):"
+echo "  ${VLESS_LINK}"
+echo "--------------------------------------------------------------------"
+echo "  扫描下方二维码导入配置:"
+echo ""
+# 使用 qrencode 生成二维码并显示在终端
+# -t UTF8: 使用 UTF-8 字符块来绘制二维码，适配大多数现代终端
+# -m 2: 设置二维码边缘的空白边距为2个字符块
+qrencode -t UTF8 -m 2 "${VLESS_LINK}"
+echo ""
+echo "===================================================================="
