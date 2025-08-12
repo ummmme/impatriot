@@ -90,7 +90,7 @@ fi
 # 请勿修改以下配置
 #-----------------------------------------------------------------------------------------------------------------------
 #1. 更新系统
-printr "1. UPDATING SYSTEM"
+printr "0. UPDATING SYSTEM"
 apt update -qq && apt upgrade -yqq
 apt install -yqq build-essential libpcre3 libpcre3-dev zlib1g-dev unzip git dnsutils vim net-tools tcl tk perl expect bc htop
 
@@ -394,7 +394,7 @@ http {
     server {
         listen 443 ssl default_server;
         listen [::]:443 ssl ;
-        http2 on;
+        http2 on; #注意此处为1.26版本以上的nginx语法
 
         server_name ${PROXY_DOMAIN};
         root /export/www/${PROXY_DOMAIN};
@@ -403,12 +403,10 @@ http {
         ssl_certificate       ${PROXY_DOMAIN_CERT_FILE};
         ssl_certificate_key   ${PROXY_DOMAIN_KEY_FILE};
 
-        # 协议版本：明确指定只使用 TLSv1.3。
+        # 协议版本：明确指定只使用 TLSv1.3，使用指定的密码套件
         ssl_protocols TLSv1.3;
         ssl_ciphers 'ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256';
         ssl_prefer_server_ciphers on;
-        ssl_stapling on;
-        ssl_stapling_verify on;
         ssl_session_timeout 1d;
         ssl_session_cache shared:SSL:10m;
 
