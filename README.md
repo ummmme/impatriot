@@ -20,7 +20,7 @@ apt update -qq && apt -yqq upgrade && apt install -yqq sudo curl
 ```
 
 ## Quick Start（Recommended）
-Nginx + Vless + Grpc + TLS1.3， 系统要求：Debian12、Ubuntu22.04及以上
+Nginx + Vless + gRPC + TLS1.3， 系统要求：Debian12、Ubuntu22.04及以上
 ```bash
 bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/xray/vless_grpc.sh)
 ```
