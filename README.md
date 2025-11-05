@@ -25,7 +25,7 @@ Nginx + Vless + gRPC + TLS1.3， 系统要求：Debian12、Ubuntu22.04及以上
 bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/xray/vless_grpc.sh)
 ```
 
-## Quick Start（Legency）
+## Quick Start（Legacy）
 ```bash
 # Nginx + Vmess + WebSocket + TLS1.3，仅支持Debian10、Ubuntu20.04以下
 bash <(curl -f -L -sS https://raw.githubusercontent.com/ummmme/impatriot/master/v2ray/ws_tls/install.sh)
